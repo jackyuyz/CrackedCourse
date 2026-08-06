@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Check, LockKeyhole, MailCheck } from "lucide-react";
+import { ArrowLeft, Check, KeyRound, LockKeyhole } from "lucide-react";
 
 import { AuthForm } from "@/components/auth-form";
 import { BrandMark } from "@/components/brand-mark";
@@ -23,8 +23,8 @@ type LoginPageProps = {
 };
 
 const assurances = [
-  "No password to create or remember",
-  "One-time link sent to your email",
+  "Create one password for repeat sign-ins",
+  "Confirm your email only once when required",
   "Your courses stay private to your account",
 ];
 
@@ -61,8 +61,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span className="text-ocean mt-2 block">course workspace.</span>
           </h1>
           <p className="text-navy/68 mt-6 max-w-lg text-lg leading-8">
-            Enter your email and we’ll send a secure link that opens your
-            dashboard—no password required.
+            Sign in with your email and password, or create an account in a few
+            seconds. No new email link is needed for routine sign-ins.
           </p>
 
           <div className="mt-8 space-y-3">
@@ -84,13 +84,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <div className="border-navy/10 mt-10 hidden max-w-md items-start gap-3 rounded-2xl border bg-white/75 p-4 sm:flex">
-            <MailCheck
+            <KeyRound
               className="text-ocean mt-0.5 size-5 shrink-0"
               aria-hidden="true"
             />
             <p className="text-muted-foreground text-xs leading-5">
-              Open the newest email link in the same browser where you request
-              it. Each link expires shortly and works only once.
+              Already used the previous email-link login? Choose “Forgot
+              password?” to set a reusable password for that account.
             </p>
           </div>
         </div>

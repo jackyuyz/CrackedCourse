@@ -22,12 +22,12 @@ export function parseEmailOtpType(value: string | null): EmailOtpType | null {
 export function authErrorMessage(code?: string) {
   switch (code) {
     case "otp_expired":
-      return "That sign-in link has expired or was already used. Request a new one below.";
+      return "That email link has expired or was already used. Request a new one below.";
     case "access_denied":
-      return "That sign-in link could not be verified. Request a new one below.";
+      return "That email link could not be verified. Request a new one below.";
     case "session_missing":
-      return "Your email was verified, but the browser session could not be saved. Request a new link in this browser.";
+      return "The email link was verified, but the browser session could not be saved. Request a new link in this browser.";
     default:
-      return "That sign-in link is invalid or expired. Request a new one below.";
+      return "That email link is invalid or expired. Request a new one below.";
   }
 }

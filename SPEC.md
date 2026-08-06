@@ -118,7 +118,7 @@ A student deciding whether their current course combination creates unusually he
 ### P0 — product MVP
 
 - Responsive web application.
-- Supabase email magic-link sign-in. OAuth is optional after P0.
+- Supabase email-and-password registration and sign-in, with one-time email confirmation when enabled and password recovery. OAuth is optional after P0.
 - PDF upload, validation, text extraction, and storage.
 - LLM-assisted structured extraction behind a provider-independent interface.
 - Course metadata, instructors/TAs, office hours, dated events, grading categories, and warnings.
@@ -243,6 +243,8 @@ Requirement IDs are stable references for implementation tasks and tests.
 - **AUTH-003:** Database authorization must enforce ownership server-side; hiding UI controls is insufficient.
 - **AUTH-004:** Unauthenticated users may access only public product and authentication routes; private application routes must redirect to sign-in.
 - **AUTH-005:** Signing out returns the user to `/` and prevents access to cached private route content.
+- **AUTH-006:** Registration creates a reusable password credential. Routine sign-ins use email and password and never require a new email link.
+- **AUTH-007:** If email confirmation is enabled, it occurs once after registration. Password recovery uses an expiring, single-use email link.
 
 ### 8.2 Source upload
 
@@ -1209,7 +1211,7 @@ The following defaults allow implementation to begin without blocking. They may 
 
 - Product UI language is English.
 - The first release is a responsive web app, not a native app.
-- P0 authentication uses Supabase email magic links.
+- P0 authentication uses Supabase email-and-password credentials with optional one-time email confirmation and password recovery.
 - A course uses one primary time zone; user settings provide the fallback.
 - P0 guarantees text-based PDFs only.
 - P0 grade aggregation is points within weighted categories.

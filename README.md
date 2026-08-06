@@ -37,7 +37,7 @@ npx supabase db push
 
 The migrations create the complete P0 schema, indexes, private syllabus bucket, storage policies, table RLS policies, auth profile trigger, and the transactional `publish_course` RPC. `supabase/seed.sql` contains fictional development data and is not required in production.
 
-Configure the Supabase Auth site URL and redirect allowlist for `/auth/callback` in each environment. Never expose the service-role key to the browser.
+Enable the Supabase Email provider, then configure the Auth site URL and redirect allowlist for `/auth/callback` in each environment. Users register with an email and password; when email confirmations are enabled they confirm their address once, then use that password for future sign-ins. Configure custom SMTP before production if confirmations or password recovery are enabled. Never expose the service-role key to the browser.
 
 ## Environment
 
@@ -45,7 +45,7 @@ Configure the Supabase Auth site URL and redirect allowlist for `/auth/callback`
 | -------------------------------------- | -------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                         |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe publishable key                 |
-| `NEXT_PUBLIC_APP_URL`                  | Canonical app origin used by magic links     |
+| `NEXT_PUBLIC_APP_URL`                  | Canonical app origin for auth and calendars  |
 | `NEXT_PUBLIC_DEMO_MODE`                | Optional explicit demo-mode switch           |
 | `MAX_SYLLABUS_SIZE_MB`                 | Server-enforced PDF limit; defaults to 15 MB |
 
