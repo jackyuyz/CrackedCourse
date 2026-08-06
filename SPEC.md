@@ -1,12 +1,10 @@
 # CrackedCourse Product & Engineering Specification
 
-**Document status:** Implementation-ready MVP specification  
-**Version:** 1.0  
-**Last updated:** 2026-08-05  
-**Product:** CrackedCourse  
-**Repository name:** `cracked-course`  
-**Primary competition category:** Overcome Obstacles  
-**Secondary category fit:** Degree Planning & Discovery, through cross-course workload visibility
+- **Document status:** Implementation-ready product specification
+- **Version:** 1.0
+- **Last updated:** 2026-08-05
+- **Product:** CrackedCourse
+- **Repository name:** `cracked-course`
 
 ---
 
@@ -19,10 +17,6 @@ The product is not merely an AI PDF reader. Its core value is reducing the time,
 ### Product promise
 
 > Crack the syllabus. Control the semester.
-
-Alternative demo description:
-
-> CrackedCourse turns scattered syllabus information into one verified plan students can actually use.
 
 ### Core experience principles
 
@@ -56,7 +50,7 @@ CrackedCourse addresses this obstacle with extraction, source verification, and 
 
 The MVP must let a student:
 
-1. Sign in or enter a clearly labeled demo experience.
+1. Sign in securely.
 2. Upload a text-based PDF syllabus.
 3. See extraction progress and recover from failures.
 4. Review extracted course details, people, office hours, key dates, and grading weights alongside source evidence.
@@ -67,20 +61,7 @@ The MVP must let a student:
 9. Enter grades in a syllabus-specific weighted grade calculator.
 10. See current grade, projected grade, and the score needed to reach a selected target when the calculation is mathematically valid.
 
-### 3.2 Demo success criteria
-
-The competition demo is successful when a reviewer can complete this story in under two minutes:
-
-1. Upload one sample syllabus.
-2. Watch it become structured course information.
-3. Inspect at least one exact source citation.
-4. Correct or confirm an extracted item.
-5. Open the populated course calendar.
-6. Switch to the all-courses calendar containing a second seeded course.
-7. Enter one grade and see the target-grade calculation change.
-8. Export the course calendar.
-
-### 3.3 Product metrics
+### 3.2 Product metrics
 
 Instrumentation should support these metrics, even if a full analytics dashboard is not built for MVP:
 
@@ -93,7 +74,7 @@ Instrumentation should support these metrics, even if a full analytics dashboard
 - percentage of published courses with at least one grade entered;
 - user-reported trust in extracted data after source review.
 
-### 3.4 Non-goals for MVP
+### 3.3 Non-goals for MVP
 
 The following must not be implemented unless separately approved:
 
@@ -134,10 +115,10 @@ A student deciding whether their current course combination creates unusually he
 
 ## 5. Scope and priority
 
-### P0 — competition MVP
+### P0 — product MVP
 
 - Responsive web application.
-- Supabase email magic-link sign-in, plus an environment-gated isolated demo mode. OAuth is optional after P0.
+- Supabase email magic-link sign-in. OAuth is optional after P0.
 - PDF upload, validation, text extraction, and storage.
 - LLM-assisted structured extraction behind a provider-independent interface.
 - Course metadata, instructors/TAs, office hours, dated events, grading categories, and warnings.
@@ -147,7 +128,7 @@ A student deciding whether their current course combination creates unusually he
 - Per-course and all-courses calendar.
 - `.ics` export.
 - Weighted-category grade calculator.
-- Seeded demo account/data and one safe sample syllabus.
+- Fictional development/test seed data and safe syllabus fixtures.
 - Loading, empty, partial, error, and unsupported-document states.
 
 ### P1 — build only after P0 is complete and verified
@@ -225,7 +206,7 @@ The implementation may adjust folder names to match framework conventions, but u
 
 | Route | Purpose | Priority |
 |---|---|---|
-| `/` | Compact product introduction and sign-in/demo entry | P0 |
+| `/` | Compact product introduction and sign-in entry | P0 |
 | `/dashboard` | Active courses, upcoming events, add-course CTA, quick status | P0 |
 | `/courses/new` | Upload/import entry | P0 |
 | `/courses/[courseId]/review` | Evidence-backed extraction review | P0 |
@@ -257,10 +238,10 @@ Requirement IDs are stable references for implementation tasks and tests.
 
 ### 8.1 Authentication and ownership
 
-- **AUTH-001:** A non-demo user must authenticate before accessing private course data.
+- **AUTH-001:** A user must authenticate before accessing private course data.
 - **AUTH-002:** Every private record must be owned directly or transitively by one authenticated user.
 - **AUTH-003:** Database authorization must enforce ownership server-side; hiding UI controls is insufficient.
-- **AUTH-004:** Demo mode must use isolated seeded data or a read-only/demo-specific account and must not expose another user’s uploads.
+- **AUTH-004:** Unauthenticated users may access only public product and authentication routes; private application routes must redirect to sign-in.
 - **AUTH-005:** Signing out returns the user to `/` and prevents access to cached private route content.
 
 ### 8.2 Source upload
@@ -828,7 +809,7 @@ tests/
 2. Domain calculations and validation must be pure functions where possible.
 3. The UI never renders raw model output; it renders schema-validated application data.
 4. Database migrations are append-only after merging; schema changes require a new migration.
-5. Seed/demo data uses fictional names and courses or properly licensed/public source material.
+5. Development and test seed data uses fictional names and courses or properly licensed/public source material.
 6. Avoid a separate microservice for MVP unless a measured platform limit makes it necessary.
 
 ---
@@ -1077,7 +1058,7 @@ Required for:
 
 At minimum:
 
-1. Authenticate/demo → upload sample PDF → review → publish → see course.
+1. Authenticate → upload PDF fixture → review → publish → see course.
 2. Edit an ambiguous event before publish and verify the corrected calendar value.
 3. Switch between course and aggregate calendars.
 4. Export `.ics` and verify expected event content.
@@ -1107,7 +1088,7 @@ Complete when:
 - Environment variables are validated with a safe example file.
 - Auth and protected routes work.
 - Database migrations and RLS policies apply cleanly to an empty project.
-- Seed command creates fictional demo data.
+- Seed command creates fictional development and test data.
 - CI runs typecheck, lint, and unit tests.
 
 ### Epic B — Upload and extraction
@@ -1150,16 +1131,16 @@ Complete when:
 - Target result handles normal, impossible, secured, and non-computable cases.
 - Unsupported policies remain visible and unapplied.
 
-### Epic F — Demo polish
+### Epic F — Product readiness
 
 Complete when:
 
-- Seeded second course makes aggregate calendar meaningful.
+- Seed data includes at least two fictional courses so aggregate calendar behavior is testable.
 - Full core flow works at desktop and mobile target widths.
 - Empty/loading/error/partial states exist.
 - No secrets or private source data appear in client bundles or logs.
 - A clean deployment can be created from repository documentation.
-- The two-minute scripted demo can be completed without manual database intervention.
+- The complete primary journey can be completed on a fresh deployment without manual database intervention.
 
 ---
 
@@ -1176,7 +1157,7 @@ Agents should execute in this order because later phases depend on earlier contr
 7. **Course workspace and calendar:** overview, event CRUD, single/all calendar, filters, `.ics` download.
 8. **Grade calculator:** category/assessment CRUD, formulas, target scenarios, unsupported-policy warnings.
 9. **Hardening:** authorization tests, input limits, rate limiting, safe logging, accessibility, responsive states.
-10. **Demo and deployment:** sample syllabus, seeded second course, stable demo path, production configuration, rehearsal.
+10. **Product readiness and deployment:** representative syllabus fixtures, multi-course seed data, production configuration, end-to-end deployment verification.
 
 ### Agent execution rules
 
@@ -1204,35 +1185,7 @@ Known limitations or follow-ups:
 
 ---
 
-## 21. Demo content and script
-
-### Demo data
-
-Provide:
-
-- one safe sample PDF containing an instructor, TA, recurring office hours, at least four dated events, five grading categories totaling 100%, and one unsupported drop-lowest policy;
-- one seeded second course with several overlapping events;
-- grades that produce an understandable target-grade scenario;
-- a deliberate ambiguous date so source verification and editing can be demonstrated.
-
-### Two-minute narrative
-
-| Time | Story |
-|---|---|
-| 0–15 sec | Students receive multiple inconsistent syllabi and manually transfer important information. |
-| 15–40 sec | Upload a syllabus and show named extraction stages. |
-| 40–65 sec | Review dates, office hours, people, and weights; open a source citation and fix the ambiguous item. |
-| 65–90 sec | Publish, open the course calendar, and switch to all courses. |
-| 90–110 sec | Enter a grade and show current standing plus the score needed for a target. |
-| 110–120 sec | Export `.ics`; if P1 exists, finish on Semester Pressure Map. |
-
-Closing line:
-
-> CrackedCourse turns the syllabus from a document students ignore into a plan they can verify and act on.
-
----
-
-## 22. Definition of done
+## 21. Definition of done
 
 The MVP is done only when all P0 requirements relevant to the shipped configuration are implemented and:
 
@@ -1246,17 +1199,17 @@ The MVP is done only when all P0 requirements relevant to the shipped configurat
 - desktop and mobile core flows are usable and accessible;
 - all required states are intentionally designed;
 - repository setup, environment variables, migrations, seeding, testing, and deployment are documented;
-- the two-minute demo is rehearsable using repository-owned safe fixtures.
+- the primary journey is covered by repository-owned safe fixtures and end-to-end tests.
 
 ---
 
-## 23. Default assumptions and decisions still open
+## 22. Default assumptions and decisions still open
 
 The following defaults allow implementation to begin without blocking. They may be changed through an explicit SPEC update:
 
-- Product UI language is English for the competition demo.
+- Product UI language is English.
 - The first release is a responsive web app, not a native app.
-- P0 authentication uses Supabase email magic links. Demo mode is explicitly enabled by environment configuration and uses isolated seeded data.
+- P0 authentication uses Supabase email magic links.
 - A course uses one primary time zone; user settings provide the fallback.
 - P0 guarantees text-based PDFs only.
 - P0 grade aggregation is points within weighted categories.
@@ -1266,4 +1219,4 @@ The following defaults allow implementation to begin without blocking. They may 
 - `.ics` download is the only calendar integration in P0.
 - Public sharing and Semester Pressure Map wait until P0 is complete.
 
-Before production use beyond a competition demo, the team must make explicit decisions about data-retention duration, deletion semantics, support contact, privacy policy, terms, model-provider data handling, and institutional requirements.
+Before public launch, the team must make explicit decisions about data-retention duration, deletion semantics, support contact, privacy policy, terms, model-provider data handling, and institutional requirements.
