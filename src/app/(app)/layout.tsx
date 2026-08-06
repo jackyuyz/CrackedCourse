@@ -12,7 +12,7 @@ export default async function PrivateAppLayout({
   children: React.ReactNode;
 }) {
   const viewer = await getViewer();
-  if (!viewer) redirect("/?signIn=required#sign-in");
+  if (!viewer) redirect("/login?notice=required&next=/dashboard");
   const courses = await getNavigationCourses(viewer);
 
   return (

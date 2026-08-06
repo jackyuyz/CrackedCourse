@@ -16,11 +16,15 @@ export function AuthForm({
   demoEnabled,
   notice,
   error,
+  redirectTo = "/dashboard",
+  autoFocus = false,
 }: {
   configured: boolean;
   demoEnabled: boolean;
   notice?: string;
   error?: string;
+  redirectTo?: string;
+  autoFocus?: boolean;
 }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -33,10 +37,13 @@ export function AuthForm({
     setFormError(null);
 
     const supabase = createClient();
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", redirectTo);
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: callbackUrl.toString(),
+        shouldCreateUser: true,
       },
     });
 
@@ -103,6 +110,7 @@ export function AuthForm({
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="h-11 pl-10"
+                  autoFocus={autoFocus}
                   disabled={!configured || status === "sending"}
                 />
               </div>

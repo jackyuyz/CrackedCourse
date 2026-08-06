@@ -358,6 +358,18 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function private.handle_new_user();
 
+-- Auth users can exist before the application schema is first deployed.
+insert into public.profiles (id, display_name, time_zone)
+select
+  id,
+  coalesce(
+    nullif(raw_user_meta_data ->> 'display_name', ''),
+    split_part(coalesce(email, 'Student'), '@', 1)
+  ),
+  coalesce(nullif(raw_user_meta_data ->> 'time_zone', ''), 'UTC')
+from auth.users
+on conflict (id) do nothing;
+
 do $$
 declare
   table_name text;

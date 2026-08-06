@@ -17,6 +17,7 @@ import { AuthForm } from "@/components/auth-form";
 import { BrandMark } from "@/components/brand-mark";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { authErrorMessage } from "@/lib/auth/callback";
 import { hasSupabaseEnv, isDemoMode } from "@/lib/env";
 
 export const metadata: Metadata = {
@@ -75,7 +76,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </Button>
           ) : null}
           <Button asChild className="h-10 px-4 shadow-sm">
-            <a href="#sign-in">Get started</a>
+            <Link href="/login">Sign in</Link>
           </Button>
         </nav>
       </header>
@@ -118,9 +119,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               size="lg"
               className="h-12 px-5 text-[15px] shadow-[0_8px_24px_rgba(33,158,188,0.22)]"
             >
-              <a href="#sign-in">
-                Add your first syllabus <ArrowRight className="ml-1 size-4" />
-              </a>
+              <Link href="/login">
+                Sign in to add a syllabus
+                <ArrowRight className="ml-1 size-4" />
+              </Link>
             </Button>
             {demoEnabled ? (
               <Button
@@ -305,9 +307,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               : undefined
           }
           error={
-            query.authError
-              ? "That sign-in link is invalid or expired. Request a new one."
-              : undefined
+            query.authError ? authErrorMessage(query.authError) : undefined
           }
         />
       </section>
