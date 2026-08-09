@@ -5,6 +5,8 @@ export type ConfidenceLabel = "high" | "review" | "low";
 export function normalizeEvidenceText(value: string) {
   return value
     .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[●•◦▪]/g, " ")
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/[‐‑‒–—]/g, "-")
@@ -65,7 +67,7 @@ export function validateExtractionEvidence(
     ...extraction.events,
     ...extraction.gradingCategories,
     ...extraction.gradingPolicies,
-  ];
+  ].filter((item) => item.value != null);
 
   return items.map((item) => {
     const matched =

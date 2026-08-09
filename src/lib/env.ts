@@ -7,8 +7,8 @@ const publicEnvSchema = z.object({
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
-  EXTRACTION_PROVIDER: z.string().default("fixture"),
-  EXTRACTION_MODEL: z.string().default("fixture-v1"),
+  EXTRACTION_PROVIDER: z.string().default("heuristic"),
+  EXTRACTION_MODEL: z.string().default("heuristic-v2"),
   EXTRACTION_API_KEY: z.string().min(1).optional(),
 });
 

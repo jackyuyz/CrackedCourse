@@ -42,8 +42,8 @@ export async function POST(_request: Request, { params }: RouteContext) {
     );
   }
 
-  const provider = process.env.EXTRACTION_PROVIDER ?? "fixture";
-  const model = process.env.EXTRACTION_MODEL ?? "fixture-v1";
+  const provider = process.env.EXTRACTION_PROVIDER ?? "heuristic";
+  const model = process.env.EXTRACTION_MODEL ?? "heuristic-v2";
   const { data: run, error: runError } = await session.supabase
     .from("extraction_runs")
     .insert({

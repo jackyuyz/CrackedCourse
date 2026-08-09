@@ -47,6 +47,8 @@ Enable the Supabase Email provider, then configure the Auth site URL and redirec
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe publishable key                 |
 | `NEXT_PUBLIC_APP_URL`                  | Canonical app origin for auth and calendars  |
 | `NEXT_PUBLIC_DEMO_MODE`                | Optional explicit demo-mode switch           |
+| `EXTRACTION_PROVIDER`                  | Syllabus extraction provider (`heuristic`)   |
+| `EXTRACTION_MODEL`                     | Extraction implementation label for run logs |
 
 ## Quality commands
 
@@ -63,6 +65,6 @@ CI runs the same checks and production build on pushes and pull requests.
 - PDF bytes upload directly from the browser to a user-scoped private Supabase path. The server then downloads and independently validates ownership, size, MIME type, extension, PDF magic bytes, and SHA-256 before extraction.
 - Extracted facts are always staged as review items with page-aware evidence. Confirmed data becomes canonical only through a database transaction.
 - All user-owned tables and storage objects are protected with ownership-based RLS. Route handlers repeat the same authorization checks.
-- The extraction provider boundary is deliberately vendor-neutral. The checked-in fixture provider makes local/demo flows deterministic; connect a production document/LLM provider before processing real syllabi.
+- The extraction provider boundary is deliberately vendor-neutral. The default evidence-first heuristic provider handles visually ordered PDF text, common syllabus tables, course staff and office hours, term-inferred dates, point- or percentage-based grading structures, and unsupported policy notes. Every inferred value remains reviewable before publishing.
 
 The explicit spec interpretation for direct uploads is documented in [docs/SPEC-AMENDMENTS.md](./docs/SPEC-AMENDMENTS.md).

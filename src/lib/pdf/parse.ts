@@ -1,5 +1,7 @@
 import "server-only";
 
+import { reconstructPdfPageText } from "@/lib/pdf/text";
+
 export interface ParsedPdfPage {
   pageNumber: number;
   text: string;
@@ -24,11 +26,20 @@ export async function parsePdf(buffer: ArrayBuffer): Promise<ParsedPdf> {
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);
       const content = await page.getTextContent();
-      const text = content.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
+      const text = reconstructPdfPageText(
+        content.items.flatMap((item) =>
+          "str" in item
+            ? [
+                {
+                  str: item.str,
+                  transform: item.transform,
+                  width: item.width,
+                  height: item.height,
+                },
+              ]
+            : [],
+        ),
+      );
       pages.push({ pageNumber, text });
       page.cleanup();
     }
