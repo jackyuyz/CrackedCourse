@@ -15,6 +15,8 @@ const sourceRegistrationSchema = z.object({
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
+const MAX_SYLLABUS_SIZE_BYTES = 20 * 1024 * 1024;
+
 export async function POST(request: Request, { params }: RouteContext) {
   const session = await getApiSession();
   if (!session) {
@@ -38,8 +40,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const input = parsed.data;
-  const maxBytes = Number(process.env.MAX_SYLLABUS_SIZE_MB ?? 15) * 1024 * 1024;
-  if (input.sizeBytes > maxBytes) {
+  if (input.sizeBytes > MAX_SYLLABUS_SIZE_BYTES) {
     return errorResponse(
       "FILE_TOO_LARGE",
       "Choose a PDF smaller than the upload limit.",
@@ -111,7 +112,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const valid =
     file.type === "application/pdf" &&
     bytes.length === input.sizeBytes &&
-    bytes.length <= maxBytes &&
+    bytes.length <= MAX_SYLLABUS_SIZE_BYTES &&
     verifiedHash === input.sha256 &&
     isPdf;
 

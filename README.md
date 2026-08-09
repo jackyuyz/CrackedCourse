@@ -47,7 +47,6 @@ Enable the Supabase Email provider, then configure the Auth site URL and redirec
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe publishable key                 |
 | `NEXT_PUBLIC_APP_URL`                  | Canonical app origin for auth and calendars  |
 | `NEXT_PUBLIC_DEMO_MODE`                | Optional explicit demo-mode switch           |
-| `MAX_SYLLABUS_SIZE_MB`                 | Server-enforced PDF limit; defaults to 15 MB |
 
 ## Quality commands
 

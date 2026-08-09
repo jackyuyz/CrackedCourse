@@ -7,7 +7,6 @@ const publicEnvSchema = z.object({
 });
 
 const serverEnvSchema = publicEnvSchema.extend({
-  MAX_SYLLABUS_SIZE_MB: z.coerce.number().positive().max(50).default(15),
   EXTRACTION_PROVIDER: z.string().default("fixture"),
   EXTRACTION_MODEL: z.string().default("fixture-v1"),
   EXTRACTION_API_KEY: z.string().min(1).optional(),
@@ -31,7 +30,6 @@ export function getPublicEnv() {
 export function getServerEnv() {
   return serverEnvSchema.parse({
     ...rawPublicEnv,
-    MAX_SYLLABUS_SIZE_MB: process.env.MAX_SYLLABUS_SIZE_MB,
     EXTRACTION_PROVIDER: process.env.EXTRACTION_PROVIDER,
     EXTRACTION_MODEL: process.env.EXTRACTION_MODEL,
     EXTRACTION_API_KEY: process.env.EXTRACTION_API_KEY,
