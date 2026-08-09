@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth/viewer", () => ({
   getViewer: mocks.getViewer,
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 import SettingsPage from "@/app/(app)/settings/page";
 
@@ -28,5 +31,6 @@ describe("SettingsPage", () => {
       "America/New_York",
     );
     expect(screen.getByText(/Fixed to New York time/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
   });
 });

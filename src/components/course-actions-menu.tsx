@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   GraduationCap,
   LoaderCircle,
   MoreHorizontal,
@@ -12,6 +14,7 @@ import {
   Settings2,
   Trash2,
 } from "lucide-react";
+import { Popover as PopoverPrimitive } from "radix-ui";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,14 +70,227 @@ const colors: Array<{
   { value: "navy", label: "Navy", className: "bg-navy" },
 ];
 
+function formatIsoDateForDisplay(value: string | null) {
+  if (!value) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[2]}/${match[3]}/${match[1]}` : "";
+}
+
+function parseUsDate(value: string): string | null | undefined {
+  if (!value.trim()) return null;
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return undefined;
+
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() !== month - 1 ||
+    candidate.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return `${match[3]}-${match[1]}-${match[2]}`;
+}
+
+const englishMonths = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+const englishWeekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+function isoDate(year: number, month: number, day: number) {
+  return `${year.toString().padStart(4, "0")}-${(month + 1)
+    .toString()
+    .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+}
+
+function monthFromValue(value: string) {
+  const parsed = parseUsDate(value);
+  if (parsed) {
+    const [year, month] = parsed.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, 1));
+  }
+  const today = new Date();
+  return new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1));
+}
+
+function EnglishDateField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  minValue,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  minValue?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => monthFromValue(value));
+  const year = visibleMonth.getUTCFullYear();
+  const month = visibleMonth.getUTCMonth();
+  const leadingDays = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const selectedIso = parseUsDate(value);
+  const minimumIso = minValue ? parseUsDate(minValue) : null;
+
+  function changeMonth(offset: number) {
+    setVisibleMonth(new Date(Date.UTC(year, month + offset, 1)));
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <PopoverPrimitive.Root
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (nextOpen) setVisibleMonth(monthFromValue(value));
+        }}
+      >
+        <PopoverPrimitive.Anchor asChild>
+          <div className="relative">
+            <Input
+              id={id}
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              value={value}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                if (/^[\d/]*$/.test(nextValue) && nextValue.length <= 10) {
+                  onChange(nextValue);
+                }
+              }}
+              maxLength={10}
+              placeholder="MM/DD/YYYY"
+              className="pr-10"
+              disabled={disabled}
+            />
+            <PopoverPrimitive.Trigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground hover:text-navy absolute top-1/2 right-1 -translate-y-1/2"
+                disabled={disabled}
+                aria-label={`Choose ${label}`}
+              >
+                <CalendarDays className="size-4" />
+              </Button>
+            </PopoverPrimitive.Trigger>
+          </div>
+        </PopoverPrimitive.Anchor>
+
+        <PopoverPrimitive.Portal>
+          <PopoverPrimitive.Content
+            align="end"
+            sideOffset={6}
+            className="bg-popover text-popover-foreground ring-foreground/10 z-60 w-72 rounded-xl p-3 shadow-lg ring-1 outline-none"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => changeMonth(-1)}
+                aria-label="Previous month"
+              >
+                <ChevronLeft />
+              </Button>
+              <p className="text-sm font-semibold">
+                {englishMonths[month]} {year}
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => changeMonth(1)}
+                aria-label="Next month"
+              >
+                <ChevronRight />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {englishWeekdays.map((weekday) => (
+                <span
+                  key={weekday}
+                  className="text-muted-foreground py-1 text-[10px] font-semibold"
+                  aria-hidden="true"
+                >
+                  {weekday}
+                </span>
+              ))}
+              {Array.from({ length: leadingDays }, (_, index) => (
+                <span key={`empty-${index}`} aria-hidden="true" />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, index) => {
+                const day = index + 1;
+                const dateIso = isoDate(year, month, day);
+                const selected = selectedIso === dateIso;
+                const beforeMinimum = Boolean(
+                  minimumIso && dateIso.localeCompare(minimumIso) < 0,
+                );
+                return (
+                  <button
+                    key={dateIso}
+                    type="button"
+                    disabled={beforeMinimum}
+                    aria-label={`${englishMonths[month]} ${day}, ${year}`}
+                    aria-pressed={selected}
+                    className={cn(
+                      "hover:bg-sky/40 focus-visible:ring-ocean grid size-8 place-items-center rounded-lg text-xs outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-25",
+                      selected && "bg-ocean hover:bg-ocean/90 text-white",
+                    )}
+                    onClick={() => {
+                      onChange(
+                        `${(month + 1).toString().padStart(2, "0")}/${day
+                          .toString()
+                          .padStart(2, "0")}/${year}`,
+                      );
+                      setOpen(false);
+                    }}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+      </PopoverPrimitive.Root>
+    </div>
+  );
+}
+
 function formFromCourse(course: CourseIdentity): CourseSettingsForm {
   return {
     code: course.code,
     title: course.title,
     section: course.section ?? "",
     termName: course.termName,
-    termStart: course.termStart ?? "",
-    termEnd: course.termEnd ?? "",
+    termStart: formatIsoDateForDisplay(course.termStart),
+    termEnd: formatIsoDateForDisplay(course.termEnd),
     timeZone: course.timeZone,
     colorKey: course.color,
     status: course.status === "archived" ? "archived" : "active",
@@ -113,11 +329,14 @@ export function CourseActionsMenu({
     event.preventDefault();
     if (saving || readOnly) return;
 
-    if (
-      form.termStart &&
-      form.termEnd &&
-      form.termEnd.localeCompare(form.termStart) < 0
-    ) {
+    const termStart = parseUsDate(form.termStart);
+    const termEnd = parseUsDate(form.termEnd);
+    if (termStart === undefined || termEnd === undefined) {
+      setError("Enter dates in MM/DD/YYYY format.");
+      return;
+    }
+
+    if (termStart && termEnd && termEnd.localeCompare(termStart) < 0) {
       setError("The term end date must be on or after the start date.");
       return;
     }
@@ -133,8 +352,8 @@ export function CourseActionsMenu({
           title: form.title,
           section: form.section.trim() || null,
           termName: form.termName.trim() || null,
-          termStart: form.termStart || null,
-          termEnd: form.termEnd || null,
+          termStart,
+          termEnd,
           timeZone: form.timeZone,
           colorKey: form.colorKey,
           status: form.status,
@@ -345,31 +564,21 @@ export function CourseActionsMenu({
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="term-start">Start date</Label>
-                  <Input
-                    id="term-start"
-                    type="date"
-                    value={form.termStart}
-                    onChange={(event) =>
-                      updateField("termStart", event.target.value)
-                    }
-                    disabled={readOnly || saving}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="term-end">End date</Label>
-                  <Input
-                    id="term-end"
-                    type="date"
-                    value={form.termEnd}
-                    min={form.termStart || undefined}
-                    onChange={(event) =>
-                      updateField("termEnd", event.target.value)
-                    }
-                    disabled={readOnly || saving}
-                  />
-                </div>
+                <EnglishDateField
+                  id="term-start"
+                  label="Start date"
+                  value={form.termStart}
+                  onChange={(value) => updateField("termStart", value)}
+                  disabled={readOnly || saving}
+                />
+                <EnglishDateField
+                  id="term-end"
+                  label="End date"
+                  value={form.termEnd}
+                  onChange={(value) => updateField("termEnd", value)}
+                  disabled={readOnly || saving}
+                  minValue={form.termStart}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="course-time-zone">Course time zone</Label>

@@ -48,11 +48,19 @@ describe("CourseActionsMenu", () => {
     const code = screen.getByLabelText("Course number");
     const title = screen.getByLabelText("Course name");
     const section = screen.getByLabelText("Section");
+    const startDate = screen.getByLabelText("Start date");
+    const endDate = screen.getByLabelText("End date");
+    expect(startDate).toHaveAttribute("type", "text");
+    expect(startDate).toHaveAttribute("placeholder", "MM/DD/YYYY");
+    expect(endDate).toHaveAttribute("type", "text");
+    expect(endDate).toHaveAttribute("placeholder", "MM/DD/YYYY");
     await user.clear(code);
     await user.type(code, "36-303");
     await user.clear(title);
     await user.type(title, "Advanced Data Analysis");
     await user.type(section, "Lecture 2");
+    await user.type(startDate, "08/31/2026");
+    await user.type(endDate, "12/18/2026");
     await user.click(screen.getByRole("button", { name: "Gold" }));
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -68,13 +76,46 @@ describe("CourseActionsMenu", () => {
       title: "Advanced Data Analysis",
       section: "Lecture 2",
       termName: "Fall 2026",
-      termStart: null,
-      termEnd: null,
+      termStart: "2026-08-31",
+      termEnd: "2026-12-18",
       timeZone: "America/New_York",
       colorKey: "gold",
       status: "active",
     });
     expect(navigationMocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("shows its own English validation instead of native date messages", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseActionsMenu course={course} />);
+
+    await user.click(screen.getByRole("button", { name: "Course options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Course settings" }));
+    await user.type(screen.getByLabelText("End date"), "13/40/2026");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter dates in MM/DD/YYYY format.",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("opens the English calendar and fills the selected date", async () => {
+    const user = userEvent.setup();
+    render(
+      <CourseActionsMenu course={{ ...course, termStart: "2026-08-31" }} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Course options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Course settings" }));
+    await user.click(screen.getByRole("button", { name: "Choose Start date" }));
+
+    expect(screen.getByText("August 2026")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "August 20, 2026" }));
+    expect(screen.getByLabelText("Start date")).toHaveValue("08/20/2026");
+    expect(screen.queryByText("August 2026")).not.toBeInTheDocument();
   });
 
   it("requires confirmation before deleting and returns to the dashboard", async () => {

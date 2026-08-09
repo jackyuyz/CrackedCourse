@@ -27,13 +27,19 @@ export async function getViewer(): Promise<Viewer | null> {
   if (error || !data?.claims?.sub) return null;
 
   const email = typeof data.claims.email === "string" ? data.claims.email : "";
-  const displayName =
+  const metadataDisplayName =
     typeof data.claims.user_metadata === "object" &&
     data.claims.user_metadata &&
     "display_name" in data.claims.user_metadata &&
     typeof data.claims.user_metadata.display_name === "string"
       ? data.claims.user_metadata.display_name
       : email.split("@")[0] || "Student";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", data.claims.sub)
+    .maybeSingle();
+  const displayName = profile?.display_name?.trim() || metadataDisplayName;
 
   return {
     id: data.claims.sub,

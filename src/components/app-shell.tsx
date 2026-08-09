@@ -1,8 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   BookOpen,
   CalendarDays,
-  ChevronDown,
   CirclePlus,
   GraduationCap,
   LayoutDashboard,
@@ -16,13 +16,12 @@ import { CourseSidebarList } from "@/components/course-sidebar-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  WorkspaceNavigation,
+  WorkspaceNavigationFallback,
+} from "@/components/workspace-navigation";
 import type { Viewer } from "@/lib/auth/viewer";
 import type { NavigationCourse } from "@/lib/data/dashboard";
-
-const primaryNav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-];
 
 export function AppShell({
   viewer,
@@ -58,18 +57,9 @@ export function AppShell({
             </Link>
           </Button>
         </div>
-        <nav className="mt-5 space-y-1 px-3" aria-label="Workspace navigation">
-          {primaryNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors"
-            >
-              <item.icon className="size-4.5" strokeWidth={2} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <Suspense fallback={<WorkspaceNavigationFallback />}>
+          <WorkspaceNavigation />
+        </Suspense>
         <Separator className="mx-5 my-5 w-auto" />
         <div className="flex min-h-0 flex-1 flex-col px-3">
           <div className="mb-2 flex items-center justify-between px-3">
@@ -99,7 +89,6 @@ export function AppShell({
                 {viewer.email}
               </span>
             </span>
-            <ChevronDown className="text-muted-foreground size-3.5" />
           </div>
           <div className="flex gap-1">
             <Button

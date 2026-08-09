@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getViewer } from "@/lib/auth/viewer";
 import type { AppCourse, AppEvent } from "@/lib/demo-data";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { getGreetingForTimeZone } from "@/lib/time-zone";
 
 const colorStyles = {
   ocean: {
@@ -46,12 +47,13 @@ export default async function DashboardPage() {
   const viewer = await getViewer();
   if (!viewer) return null;
   const { courses, events } = await getDashboardData(viewer);
+  const greeting = getGreetingForTimeZone();
 
   return (
     <main className="mx-auto max-w-[1280px] px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
       <PageHeader
         eyebrow="Fall 2026"
-        title={`Good morning, ${viewer.displayName}.`}
+        title={`${greeting}, ${viewer.displayName}.`}
         description="Here’s what deserves your attention across the semester."
         actions={
           <Button asChild className="h-10 px-4 shadow-sm">

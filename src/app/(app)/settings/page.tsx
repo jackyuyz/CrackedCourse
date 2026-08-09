@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Bell, Clock3, Database, ShieldCheck, UserRound } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { ProfileSettingsForm } from "@/components/profile-settings-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { getViewer } from "@/lib/auth/viewer";
 import { PRIMARY_TIME_ZONE } from "@/lib/time-zone";
 
@@ -53,33 +52,13 @@ export default async function SettingsPage() {
                 Profile
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5 p-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="display-name">Display name</Label>
-                  <Input id="display-name" defaultValue={viewer.displayName} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email-setting">Email</Label>
-                  <Input
-                    id="email-setting"
-                    defaultValue={viewer.email}
-                    disabled
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Primary time zone</Label>
-                <Input
-                  id="timezone"
-                  defaultValue={PRIMARY_TIME_ZONE}
-                  disabled
-                />
-                <p className="text-muted-foreground text-[10px] leading-5">
-                  Fixed to New York time. Course time zones take priority when a
-                  syllabus specifies one.
-                </p>
-              </div>
+            <CardContent className="p-5">
+              <ProfileSettingsForm
+                displayName={viewer.displayName}
+                email={viewer.email}
+                primaryTimeZone={PRIMARY_TIME_ZONE}
+                readOnly={viewer.isDemo}
+              />
             </CardContent>
           </Card>
           <Card className="gap-0 py-0 shadow-none">
