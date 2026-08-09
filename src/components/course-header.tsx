@@ -37,11 +37,9 @@ const statuses = {
 
 export function CourseHeader({
   course,
-  active,
   actions,
 }: {
   course: CourseHeaderCourse;
-  active: "overview" | "calendar" | "grades";
   actions?: React.ReactNode;
 }) {
   const status = statuses[course.status];
@@ -85,7 +83,7 @@ export function CourseHeader({
         {actions ? <div className="flex gap-2">{actions}</div> : null}
       </div>
       <div className="mt-7">
-        <CourseTabs courseId={course.id} active={active} />
+        <CourseTabs courseId={course.id} />
       </div>
     </header>
   );

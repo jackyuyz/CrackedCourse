@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LoaderCircle, Trash2 } from "lucide-react";
+import { Archive, LoaderCircle, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -141,6 +141,11 @@ export function CourseSidebarList({
                   ) : course.status === "draft" ? (
                     <span className="text-muted-foreground mt-0.5 block text-[9px]">
                       Draft
+                    </span>
+                  ) : null}
+                  {course.status === "archived" ? (
+                    <span className="text-muted-foreground mt-0.5 flex items-center gap-1 text-[9px]">
+                      <Archive className="size-2.5" /> Archived
                     </span>
                   ) : null}
                 </span>

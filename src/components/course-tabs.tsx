@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CalendarDays, GraduationCap, LayoutDashboard } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -9,13 +12,14 @@ const tabs = [
   { suffix: "/grades", label: "Grades", icon: GraduationCap },
 ];
 
-export function CourseTabs({
-  courseId,
-  active,
-}: {
-  courseId: string;
-  active: "overview" | "calendar" | "grades";
-}) {
+export function CourseTabs({ courseId }: { courseId: string }) {
+  const pathname = usePathname();
+  const active = pathname.endsWith("/calendar")
+    ? "calendar"
+    : pathname.endsWith("/grades")
+      ? "grades"
+      : "overview";
+
   return (
     <nav
       className="border-border flex gap-1 overflow-x-auto border-b"

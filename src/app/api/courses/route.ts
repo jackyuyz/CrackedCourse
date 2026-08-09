@@ -4,12 +4,13 @@ import { z } from "zod";
 
 import { errorResponse } from "@/lib/api/errors";
 import { getApiSession } from "@/lib/auth/api";
+import { PRIMARY_TIME_ZONE } from "@/lib/time-zone";
 
 const createCourseSchema = z.object({
   code: z.string().trim().max(40).nullable().optional(),
   title: z.string().trim().max(180).nullable().optional(),
   termName: z.string().trim().max(80).nullable().optional(),
-  timeZone: z.string().trim().min(1).max(80).default("UTC"),
+  timeZone: z.literal(PRIMARY_TIME_ZONE).default(PRIMARY_TIME_ZONE),
   colorKey: z.enum(["ocean", "orange", "gold", "navy"]).default("ocean"),
   syllabusSha256: z
     .string()

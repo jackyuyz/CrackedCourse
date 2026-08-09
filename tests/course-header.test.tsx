@@ -1,7 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { CourseHeader } from "@/components/course-header";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/courses/course-id/calendar",
+}));
 
 describe("CourseHeader", () => {
   it("keeps the shared course identity visible while the active tab changes", () => {
@@ -16,7 +20,6 @@ describe("CourseHeader", () => {
           color: "ocean",
           status: "active",
         }}
-        active="calendar"
       />,
     );
 

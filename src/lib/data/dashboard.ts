@@ -56,17 +56,22 @@ export async function getNavigationCourses(
     .from("courses")
     .select("id,code,title,color_key,status")
     .eq("owner_id", viewer.id)
-    .neq("status", "archived")
     .order("created_at", { ascending: false })
-    .limit(12);
+    .limit(50);
 
-  return (data ?? []).map((course) => ({
-    id: course.id,
-    code: course.code,
-    title: course.title,
-    color: color(course.color_key),
-    status: course.status as AppCourse["status"],
-  }));
+  return (data ?? [])
+    .map((course) => ({
+      id: course.id,
+      code: course.code,
+      title: course.title,
+      color: color(course.color_key),
+      status: course.status as AppCourse["status"],
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.status === "archived") - Number(b.status === "archived"),
+    )
+    .slice(0, 12);
 }
 
 export async function getDashboardData(viewer: Viewer): Promise<DashboardData> {

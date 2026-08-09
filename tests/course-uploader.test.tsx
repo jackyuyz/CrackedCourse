@@ -98,6 +98,9 @@ describe("CourseUploader", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/courses");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toMatchObject(
+      { timeZone: "America/New_York" },
+    );
     expect(fetchMock.mock.calls[1][0]).toBe(
       "/api/courses/existing-course/extractions",
     );

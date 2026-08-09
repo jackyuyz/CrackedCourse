@@ -32,6 +32,57 @@ export interface CourseOverviewData {
   } | null;
 }
 
+export interface CourseIdentity extends Pick<
+  AppCourse,
+  | "id"
+  | "code"
+  | "title"
+  | "section"
+  | "termName"
+  | "timeZone"
+  | "color"
+  | "status"
+> {
+  termStart: string | null;
+  termEnd: string | null;
+}
+
+export async function getCourseIdentity(
+  viewer: Viewer,
+  courseId: string,
+): Promise<CourseIdentity | null> {
+  if (viewer.isDemo) {
+    const course = demoCourses.find((item) => item.id === courseId);
+    return course ? { ...course, termStart: null, termEnd: null } : null;
+  }
+
+  const supabase = await createClient();
+  const { data: course } = await supabase
+    .from("courses")
+    .select(
+      "id,code,title,section,term_name,term_start,term_end,time_zone,color_key,status",
+    )
+    .eq("id", courseId)
+    .eq("owner_id", viewer.id)
+    .maybeSingle();
+  if (!course) return null;
+
+  return {
+    id: course.id,
+    code: course.code ?? "Course",
+    title: course.title ?? "Untitled course",
+    section: course.section,
+    termName: course.term_name ?? "Current term",
+    termStart: course.term_start,
+    termEnd: course.term_end,
+    timeZone: course.time_zone,
+    color: (["ocean", "orange", "gold", "navy"].includes(course.color_key)
+      ? course.color_key
+      : "ocean") as AppCourse["color"],
+    status: course.status,
+  };
+}
+
 export async function getCourseOverview(
   viewer: Viewer,
   courseId: string,
@@ -123,23 +174,21 @@ export async function getCourseOverview(
     .filter((event) => event.sortAt >= now)
     .sort((a, b) => a.sortAt.getTime() - b.sortAt.getTime())
     .slice(0, 3)
-    .map(
-      (event): AppEvent => ({
-        id: event.id,
-        courseId: event.courseId,
-        courseCode: event.courseCode,
-        courseTitle: event.courseTitle,
-        courseColor: event.courseColor,
-        title: event.title,
-        type: event.type,
-        date: event.date,
-        displayDate: event.displayDate,
-        time: event.time,
-        isAllDay: event.isAllDay,
-        location: event.location,
-        sourcePage: event.sourcePage,
-      }),
-    );
+    .map((event): AppEvent => ({
+      id: event.id,
+      courseId: event.courseId,
+      courseCode: event.courseCode,
+      courseTitle: event.courseTitle,
+      courseColor: event.courseColor,
+      title: event.title,
+      type: event.type,
+      date: event.date,
+      displayDate: event.displayDate,
+      time: event.time,
+      isAllDay: event.isAllDay,
+      location: event.location,
+      sourcePage: event.sourcePage,
+    }));
 
   const people: CoursePerson[] = (row.course_people ?? []).map((person) => ({
     name: person.name,

@@ -34,6 +34,13 @@ const courses: NavigationCourse[] = [
     color: "gold",
     status: "draft",
   },
+  {
+    id: "archived-course",
+    code: "36-100",
+    title: "Introductory Statistics",
+    color: "navy",
+    status: "archived",
+  },
 ];
 
 describe("CourseSidebarList", () => {
@@ -55,6 +62,11 @@ describe("CourseSidebarList", () => {
     const draftLink = screen.getByRole("link", { name: /New course/ });
     expect(draftLink).toHaveAttribute("href", "/courses/draft-course/review");
     expect(draftLink).not.toHaveAttribute("aria-current");
+
+    expect(
+      screen.getByRole("link", { name: /Introductory Statistics/ }),
+    ).toHaveAttribute("href", "/courses/archived-course");
+    expect(screen.getByText("Archived")).toBeVisible();
   });
 
   it("deletes the selected course after confirmation and leaves its stale route", async () => {

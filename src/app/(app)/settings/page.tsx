@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getViewer } from "@/lib/auth/viewer";
+import { PRIMARY_TIME_ZONE } from "@/lib/time-zone";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -69,9 +70,14 @@ export default async function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timezone">Primary time zone</Label>
-                <Input id="timezone" defaultValue="America/New_York" />
+                <Input
+                  id="timezone"
+                  defaultValue={PRIMARY_TIME_ZONE}
+                  disabled
+                />
                 <p className="text-muted-foreground text-[10px] leading-5">
-                  Course time zones take priority when a syllabus specifies one.
+                  Fixed to New York time. Course time zones take priority when a
+                  syllabus specifies one.
                 </p>
               </div>
             </CardContent>

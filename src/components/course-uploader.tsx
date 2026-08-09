@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/lib/supabase/client";
+import { PRIMARY_TIME_ZONE } from "@/lib/time-zone";
 import { cn } from "@/lib/utils";
 
 type Phase =
@@ -131,7 +132,7 @@ export function CourseUploader({ demo }: { demo: boolean }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          timeZone: PRIMARY_TIME_ZONE,
           colorKey: "ocean",
           syllabusSha256: sha256,
         }),
