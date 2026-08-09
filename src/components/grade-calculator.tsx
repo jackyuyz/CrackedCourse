@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Calculator,
   CheckCircle2,
+  ChevronDown,
   CircleAlert,
   CircleHelp,
   GraduationCap,
@@ -13,7 +14,6 @@ import {
   Target,
 } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,16 +202,54 @@ export function GradeCalculator({
         />
       </section>
 
-      {initialData.policyWarnings.map((warning) => (
-        <Alert
-          key={warning}
-          className="border-gold/40 bg-gold/10 text-navy mt-5"
-        >
-          <AlertTriangle className="size-4 text-[#8a6200]" />
-          <AlertTitle>Unsupported policy found</AlertTitle>
-          <AlertDescription>{warning}</AlertDescription>
-        </Alert>
-      ))}
+      {initialData.policyWarnings.length > 0 ? (
+        <details className="border-gold/40 bg-gold/10 group mt-5 overflow-hidden rounded-xl border">
+          <summary className="focus-visible:ring-gold/40 flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5 outline-none focus-visible:ring-2 focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="bg-gold/20 text-navy grid size-8 shrink-0 place-items-center rounded-lg">
+                <AlertTriangle className="size-4 text-[#8a6200]" />
+              </span>
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-navy text-xs font-extrabold">
+                    Unsupported policies
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="border-gold/45 bg-white/65 font-mono text-[9px]"
+                  >
+                    {initialData.policyWarnings.length}
+                  </Badge>
+                </span>
+                <span className="text-muted-foreground mt-0.5 block truncate text-[10px]">
+                  Saved as reference notes; not applied to grade calculations.
+                </span>
+              </span>
+            </span>
+            <span className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-[10px] font-bold">
+              <span className="hidden sm:inline">View policies</span>
+              <ChevronDown className="size-4 transition-transform duration-200 group-open:rotate-180" />
+            </span>
+          </summary>
+          <div className="border-gold/30 border-t bg-white/35">
+            <ol className="max-h-[420px] divide-y divide-[#eadba9] overflow-y-auto">
+              {initialData.policyWarnings.map((warning, index) => (
+                <li
+                  key={`${index}-${warning}`}
+                  className="flex gap-3 px-4 py-3.5"
+                >
+                  <span className="border-gold/45 text-navy/70 mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border bg-white/70 font-mono text-[9px] font-bold">
+                    {index + 1}
+                  </span>
+                  <p className="text-muted-foreground text-xs leading-5">
+                    {warning}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </details>
+      ) : null}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-4">

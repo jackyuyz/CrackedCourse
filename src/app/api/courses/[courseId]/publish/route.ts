@@ -1,3 +1,5 @@
+import { revalidatePath } from "next/cache";
+
 import { errorResponse } from "@/lib/api/errors";
 import { getApiSession } from "@/lib/auth/api";
 
@@ -39,6 +41,8 @@ export async function POST(_request: Request, { params }: RouteContext) {
       code === "COURSE_NOT_FOUND" ? 404 : 422,
     );
   }
+
+  revalidatePath("/(app)", "layout");
 
   return Response.json({ courseId, status: "active" });
 }

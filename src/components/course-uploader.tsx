@@ -199,6 +199,7 @@ export function CourseUploader({ demo }: { demo: boolean }) {
       router.refresh();
     } catch (caught) {
       setPhase("error");
+      router.refresh();
       setError(
         caught instanceof Error
           ? caught.message

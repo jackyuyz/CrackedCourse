@@ -18,7 +18,8 @@ export interface DashboardData {
 
 export interface NavigationCourse {
   id: string;
-  code: string;
+  code: string | null;
+  title: string | null;
   color: AppCourse["color"];
   status: AppCourse["status"];
 }
@@ -41,9 +42,10 @@ export async function getNavigationCourses(
   viewer: Viewer,
 ): Promise<NavigationCourse[]> {
   if (viewer.isDemo) {
-    return demoCourses.map(({ id, code, color, status }) => ({
+    return demoCourses.map(({ id, code, title, color, status }) => ({
       id,
       code,
+      title,
       color,
       status,
     }));
@@ -52,14 +54,16 @@ export async function getNavigationCourses(
   const supabase = await createClient();
   const { data } = await supabase
     .from("courses")
-    .select("id,code,color_key,status")
+    .select("id,code,title,color_key,status")
+    .eq("owner_id", viewer.id)
     .neq("status", "archived")
     .order("created_at", { ascending: false })
     .limit(12);
 
   return (data ?? []).map((course) => ({
     id: course.id,
-    code: course.code ?? "Course",
+    code: course.code,
+    title: course.title,
     color: color(course.color_key),
     status: course.status as AppCourse["status"],
   }));

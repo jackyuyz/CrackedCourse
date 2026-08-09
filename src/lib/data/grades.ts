@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { Viewer } from "@/lib/auth/viewer";
-import { demoCourses, demoGradeCategories } from "@/lib/demo-data";
+import {
+  demoCourses,
+  demoGradeCategories,
+  type AppCourse,
+} from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
 
 export interface GradeWorkspaceAssessment {
@@ -22,9 +26,18 @@ export interface GradeWorkspaceCategory {
 }
 
 export interface GradeWorkspaceData {
-  course: { id: string; code: string; title: string; termName: string };
+  course: Pick<
+    AppCourse,
+    "id" | "code" | "title" | "section" | "termName" | "color" | "status"
+  >;
   categories: GradeWorkspaceCategory[];
   policyWarnings: string[];
+}
+
+function safeColor(value: string): AppCourse["color"] {
+  return (
+    ["ocean", "orange", "gold", "navy"].includes(value) ? value : "ocean"
+  ) as AppCourse["color"];
 }
 
 export async function getGradeWorkspace(
@@ -54,7 +67,10 @@ export async function getGradeWorkspace(
         id: course.id,
         code: course.code,
         title: course.title,
+        section: course.section,
         termName: course.termName,
+        color: course.color,
+        status: course.status,
       },
       categories: demoGradeCategories.map((category, categoryIndex) => ({
         id: `category-${categoryIndex}`,
@@ -84,7 +100,7 @@ export async function getGradeWorkspace(
   const { data: course } = await supabase
     .from("courses")
     .select(
-      "id,code,title,term_name,grading_categories(id,name,weight_percent,is_complete,display_order,assessments(id,name,earned_points,max_points,expected_percent,status,display_order)),grading_policies(description,calculator_support)",
+      "id,code,title,section,term_name,color_key,status,grading_categories(id,name,weight_percent,is_complete,display_order,assessments(id,name,earned_points,max_points,expected_percent,status,display_order)),grading_policies(description,calculator_support)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -96,7 +112,10 @@ export async function getGradeWorkspace(
       id: course.id,
       code: course.code ?? "Course",
       title: course.title ?? "Untitled course",
+      section: course.section,
       termName: course.term_name ?? "Current term",
+      color: safeColor(course.color_key),
+      status: course.status,
     },
     categories: (course.grading_categories ?? [])
       .sort((a, b) => a.display_order - b.display_order)

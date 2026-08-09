@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CalendarWorkspace } from "@/components/calendar-workspace";
-import { CourseTabs } from "@/components/course-tabs";
-import { Badge } from "@/components/ui/badge";
+import { CourseHeader } from "@/components/course-header";
 import { getViewer } from "@/lib/auth/viewer";
 import { getCalendarData } from "@/lib/data/calendar";
 
@@ -21,18 +20,7 @@ export default async function CourseCalendarPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-[1260px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
-      <header>
-        <Badge variant="outline" className="bg-white font-mono text-[10px]">
-          {course.code}
-        </Badge>
-        <h1 className="text-navy mt-3 text-2xl font-extrabold tracking-[-0.04em]">
-          {course.title}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">{course.termName}</p>
-        <div className="mt-6">
-          <CourseTabs courseId={course.id} active="calendar" />
-        </div>
-      </header>
+      <CourseHeader course={course} active="calendar" />
       <CalendarWorkspace {...data} courseId={course.id} demo={viewer.isDemo} />
     </main>
   );

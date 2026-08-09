@@ -1,3 +1,5 @@
+import { revalidatePath } from "next/cache";
+
 import { z } from "zod";
 
 import { errorResponse } from "@/lib/api/errors";
@@ -102,6 +104,8 @@ export async function POST(request: Request) {
       500,
     );
   }
+
+  revalidatePath("/(app)", "layout");
 
   return Response.json(
     { courseId: data.id, courseStatus: "draft", reused: false },

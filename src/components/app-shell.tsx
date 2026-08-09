@@ -12,6 +12,7 @@ import {
 
 import { signOut } from "@/app/(app)/actions";
 import { BrandMark } from "@/components/brand-mark";
+import { CourseSidebarList } from "@/components/course-sidebar-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -22,13 +23,6 @@ const primaryNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
-
-const courseColorClass = {
-  ocean: "bg-ocean",
-  orange: "bg-orange",
-  gold: "bg-gold",
-  navy: "bg-navy",
-} as const;
 
 export function AppShell({
   viewer,
@@ -90,26 +84,7 @@ export function AppShell({
               <CirclePlus className="size-3.5" />
             </Link>
           </div>
-          <div className="space-y-1 overflow-y-auto">
-            {courses.map((course) => (
-              <Link
-                key={course.id}
-                href={courseHref(course)}
-                className="text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
-              >
-                <span
-                  className={`size-2.5 rounded-[3px] ${courseColorClass[course.color]}`}
-                  aria-hidden="true"
-                />
-                <span className="min-w-0 truncate">{course.code}</span>
-              </Link>
-            ))}
-            {courses.length === 0 ? (
-              <p className="text-muted-foreground px-3 py-2 text-xs leading-5">
-                Add a course to begin.
-              </p>
-            ) : null}
-          </div>
+          <CourseSidebarList courses={courses} canDelete={!viewer.isDemo} />
         </div>
         <div className="border-sidebar-border border-t p-3">
           <div className="mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5">

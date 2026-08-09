@@ -174,6 +174,7 @@ export function ReviewWorkspace({
 
     if (demo) {
       router.push(`/courses/${initialData.courseId}`);
+      router.refresh();
       return;
     }
 
@@ -195,7 +196,8 @@ export function ReviewWorkspace({
       return;
     }
 
-    router.push(`/courses/${initialData.courseId}`);
+    router.replace(`/courses/${initialData.courseId}`);
+    router.refresh();
   }
 
   return (

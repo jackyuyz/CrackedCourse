@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { CourseTabs } from "@/components/course-tabs";
+import { CourseHeader } from "@/components/course-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,13 +25,6 @@ import { getViewer } from "@/lib/auth/viewer";
 import { getCourseOverview } from "@/lib/data/course";
 
 export const metadata: Metadata = { title: "Course overview" };
-
-const courseColorBars = {
-  ocean: "bg-ocean",
-  orange: "bg-orange",
-  gold: "bg-gold",
-  navy: "bg-navy",
-} as const;
 
 type PageProps = { params: Promise<{ courseId: string }> };
 
@@ -44,34 +37,12 @@ export default async function CoursePage({ params }: PageProps) {
   const { course } = data;
 
   return (
-    <main className="mx-auto max-w-[1240px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
-      <header>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-4">
-            <span
-              className={`mt-1 h-14 w-2 shrink-0 rounded-full ${courseColorBars[course.color]}`}
-            />
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="bg-white font-mono text-[10px]"
-                >
-                  {course.code}
-                </Badge>
-                <Badge className="bg-ocean/10 text-ocean border-0 text-[10px] shadow-none">
-                  <CircleCheck className="mr-1 size-3" /> Active
-                </Badge>
-              </div>
-              <h1 className="text-navy mt-3 text-2xl font-extrabold tracking-[-0.045em] text-balance sm:text-3xl">
-                {course.title}
-              </h1>
-              <p className="text-muted-foreground mt-2 text-sm">
-                {[course.section, course.termName].filter(Boolean).join(" · ")}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
+    <main className="mx-auto max-w-[1260px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
+      <CourseHeader
+        course={course}
+        active="overview"
+        actions={
+          <>
             <Button asChild variant="outline" className="h-9">
               <Link
                 href={
@@ -96,12 +67,9 @@ export default async function CoursePage({ params }: PageProps) {
             >
               <MoreHorizontal className="size-4" />
             </Button>
-          </div>
-        </div>
-        <div className="mt-7">
-          <CourseTabs courseId={course.id} active="overview" />
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
         <div className="space-y-6">
