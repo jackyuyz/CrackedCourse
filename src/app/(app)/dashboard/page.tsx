@@ -257,7 +257,11 @@ function CourseCard({ course }: { course: AppCourse }) {
               ) : null}
             </div>
             <Link
-              href={`/courses/${course.id}`}
+              href={
+                course.status === "draft"
+                  ? `/courses/${course.id}/review`
+                  : `/courses/${course.id}`
+              }
               className="focus-visible:outline-ocean mt-3 block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <h3 className="text-navy group-hover:text-ocean line-clamp-2 min-h-11 text-base leading-[1.35] font-extrabold tracking-[-0.025em]">

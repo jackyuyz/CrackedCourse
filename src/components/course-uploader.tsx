@@ -23,6 +23,22 @@ import { cn } from "@/lib/utils";
 type Phase =
   "idle" | "uploading" | "reading" | "finding" | "preparing" | "error";
 
+type CourseStatus = "draft" | "active" | "archived";
+
+interface CourseResolution {
+  courseId: string;
+  courseStatus: CourseStatus;
+  reused: boolean;
+}
+
+interface SourceRegistration extends CourseResolution {
+  source: { id: string };
+}
+
+interface ApiErrorBody {
+  error?: { code?: string; message?: string };
+}
+
 const phases: Array<{ key: Phase; label: string }> = [
   { key: "reading", label: "Reading document" },
   { key: "finding", label: "Finding course details" },
@@ -40,6 +56,16 @@ const order: Record<Phase, number> = {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function responseBody<T>(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as
+    (T & ApiErrorBody) | null;
+  if (!response.ok) {
+    throw new Error(body?.error?.message ?? fallback);
+  }
+  if (!body) throw new Error(fallback);
+  return body;
 }
 
 export function CourseUploader({ demo }: { demo: boolean }) {
@@ -89,65 +115,94 @@ export function CourseUploader({ demo }: { demo: boolean }) {
 
     try {
       setPhase("uploading");
+      const supabase = createClient();
+      const [{ data: userResult, error: userError }, fileBytes] =
+        await Promise.all([supabase.auth.getUser(), file.arrayBuffer()]);
+      if (userError || !userResult.user) {
+        throw new Error("Sign in again before uploading a syllabus.");
+      }
+
+      const hashBytes = await crypto.subtle.digest("SHA-256", fileBytes);
+      const sha256 = Array.from(new Uint8Array(hashBytes))
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("");
+
       const courseResponse = await fetch("/api/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
           colorKey: "ocean",
+          syllabusSha256: sha256,
         }),
       });
-      if (!courseResponse.ok) throw new Error("COURSE_CREATE_FAILED");
-      const { courseId } = (await courseResponse.json()) as {
-        courseId: string;
-      };
+      let resolution = await responseBody<CourseResolution>(
+        courseResponse,
+        "We couldn’t create or open the course draft. Try again.",
+      );
 
-      const supabase = createClient();
-      const { data: userResult, error: userError } =
-        await supabase.auth.getUser();
-      if (userError || !userResult.user) throw new Error("UNAUTHORIZED");
+      if (!resolution.reused) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+        const storagePath = `${userResult.user.id}/${crypto.randomUUID()}/${safeName}`;
 
-      const fileBytes = await file.arrayBuffer();
-      const hashBytes = await crypto.subtle.digest("SHA-256", fileBytes);
-      const sha256 = Array.from(new Uint8Array(hashBytes))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const storagePath = `${userResult.user.id}/${crypto.randomUUID()}/${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("syllabi")
+          .upload(storagePath, file, {
+            cacheControl: "3600",
+            contentType: "application/pdf",
+            upsert: false,
+          });
+        if (uploadError) {
+          throw new Error(
+            "The course draft was saved, but the PDF upload failed. Try again.",
+          );
+        }
 
-      const { error: uploadError } = await supabase.storage
-        .from("syllabi")
-        .upload(storagePath, file, {
-          cacheControl: "3600",
-          contentType: "application/pdf",
-          upsert: false,
-        });
-      if (uploadError) throw new Error("SOURCE_UPLOAD_FAILED");
+        const registrationResponse = await fetch(
+          `/api/courses/${resolution.courseId}/sources`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storagePath,
+              originalName: file.name,
+              mimeType: "application/pdf",
+              sizeBytes: file.size,
+              sha256,
+            }),
+          },
+        );
+        resolution = await responseBody<SourceRegistration>(
+          registrationResponse,
+          "The PDF was uploaded, but we couldn’t save it to the course. Try again.",
+        );
+      }
 
-      const registration = await fetch(`/api/courses/${courseId}/sources`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storagePath,
-          originalName: file.name,
-          mimeType: "application/pdf",
-          sizeBytes: file.size,
-          sha256,
-        }),
-      });
-      if (!registration.ok) throw new Error("SOURCE_REGISTER_FAILED");
+      if (resolution.courseStatus === "active") {
+        setPhase("preparing");
+        router.push(`/courses/${resolution.courseId}`);
+        router.refresh();
+        return;
+      }
 
       setPhase("reading");
-      const extraction = await fetch(`/api/courses/${courseId}/extractions`, {
-        method: "POST",
-      });
-      if (!extraction.ok) throw new Error("EXTRACTION_FAILED");
+      const extraction = await fetch(
+        `/api/courses/${resolution.courseId}/extractions`,
+        { method: "POST" },
+      );
+      await responseBody(
+        extraction,
+        "The course and PDF are saved, but analysis failed. Try again.",
+      );
       setPhase("preparing");
-      router.push(`/courses/${courseId}/review`);
-    } catch {
+      router.push(`/courses/${resolution.courseId}/review`);
+      router.refresh();
+    } catch (caught) {
       setPhase("error");
       setError(
-        "We couldn’t prepare this syllabus. The draft is safe—try again or create the course manually.",
+        caught instanceof Error
+          ? caught.message
+          : "We couldn’t prepare this syllabus. The saved draft is safe—try again.",
       );
     }
   }

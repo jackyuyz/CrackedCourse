@@ -10,6 +10,9 @@ export const maxDuration = 60;
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
+const LATEST_EXTRACTION_PROVIDER = "heuristic";
+const LATEST_EXTRACTION_MODEL = "heuristic-v2";
+
 export async function POST(_request: Request, { params }: RouteContext) {
   const session = await getApiSession();
   if (!session) {
@@ -19,7 +22,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
   const { courseId } = await params;
   const { data: course } = await session.supabase
     .from("courses")
-    .select("id,term_name,term_start,term_end,time_zone")
+    .select("id,term_name,term_start,term_end,time_zone,status")
     .eq("id", courseId)
     .eq("owner_id", session.userId)
     .maybeSingle();
@@ -42,8 +45,49 @@ export async function POST(_request: Request, { params }: RouteContext) {
     );
   }
 
-  const provider = process.env.EXTRACTION_PROVIDER ?? "heuristic";
-  const model = process.env.EXTRACTION_MODEL ?? "heuristic-v2";
+  const provider = LATEST_EXTRACTION_PROVIDER;
+  const model = LATEST_EXTRACTION_MODEL;
+  let existingRunQuery = session.supabase
+    .from("extraction_runs")
+    .select("id,status,provider,model,created_at")
+    .eq("source_id", source.id)
+    .eq("course_id", courseId)
+    .eq("owner_id", session.userId)
+    .in("status", ["succeeded", "partial"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (course.status !== "active") {
+    existingRunQuery = existingRunQuery
+      .eq("provider", provider)
+      .eq("model", model);
+  }
+
+  const { data: existingRun, error: existingRunError } =
+    await existingRunQuery.maybeSingle();
+  if (existingRunError) {
+    return errorResponse(
+      "EXTRACTION_LOOKUP_FAILED",
+      "We couldn’t check the existing syllabus analysis. Try again.",
+      500,
+    );
+  }
+  if (existingRun) {
+    return Response.json(
+      {
+        runId: existingRun.id,
+        status: existingRun.status,
+        provider: existingRun.provider,
+        model: existingRun.model,
+        reused: true,
+      },
+      {
+        status: 200,
+        headers: { "Cache-Control": "private, no-store" },
+      },
+    );
+  }
+
   const { data: run, error: runError } = await session.supabase
     .from("extraction_runs")
     .insert({
@@ -210,11 +254,21 @@ export async function POST(_request: Request, { params }: RouteContext) {
         status: partial ? "partial" : "succeeded",
         itemCount: items.length,
         warningCount: warnings.length,
+        provider,
+        model,
+        reused: false,
       },
       { status: 200 },
     );
   } catch (caught) {
     const code = caught instanceof Error ? caught.message : "EXTRACTION_FAILED";
+    console.error("Syllabus extraction failed", {
+      courseId,
+      sourceId: source.id,
+      runId: run.id,
+      code,
+      cause: caught,
+    });
     await Promise.all([
       session.supabase
         .from("extraction_runs")
@@ -235,11 +289,32 @@ export async function POST(_request: Request, { params }: RouteContext) {
         .eq("id", source.id),
     ]);
 
-    return errorResponse(
-      code === "EXTRACTION_SCHEMA_INVALID" ? code : "PDF_PARSE_FAILED",
-      "We couldn’t read this PDF. Replace it or try again.",
-      422,
-      { runId: run.id },
-    );
+    const publicErrors: Record<string, { code: string; message: string }> = {
+      PDF_DOWNLOAD_FAILED: {
+        code: "PDF_DOWNLOAD_FAILED",
+        message: "We couldn’t retrieve the saved PDF. Try again.",
+      },
+      SOURCE_PAGES_SAVE_FAILED: {
+        code: "SOURCE_PAGES_SAVE_FAILED",
+        message: "We read the PDF but couldn’t save its pages. Try again.",
+      },
+      EXTRACTION_ITEMS_SAVE_FAILED: {
+        code: "EXTRACTION_ITEMS_SAVE_FAILED",
+        message:
+          "We extracted the syllabus but couldn’t save the review. Try again.",
+      },
+      EXTRACTION_SCHEMA_INVALID: {
+        code: "EXTRACTION_SCHEMA_INVALID",
+        message: "The extracted syllabus needs another pass. Try again.",
+      },
+    };
+    const publicError = publicErrors[code] ?? {
+      code: "PDF_PARSE_FAILED",
+      message: "We couldn’t read this PDF. Replace it or try again.",
+    };
+
+    return errorResponse(publicError.code, publicError.message, 422, {
+      runId: run.id,
+    });
   }
 }

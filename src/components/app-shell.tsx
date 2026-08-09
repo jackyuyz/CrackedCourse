@@ -40,9 +40,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const firstCourse = courses[0];
-  const coursesHref = firstCourse
-    ? `/courses/${firstCourse.id}`
-    : "/courses/new";
+  const coursesHref = firstCourse ? courseHref(firstCourse) : "/courses/new";
   const gradesHref = firstCourse
     ? `/courses/${firstCourse.id}/grades`
     : "/courses/new";
@@ -96,7 +94,7 @@ export function AppShell({
             {courses.map((course) => (
               <Link
                 key={course.id}
-                href={`/courses/${course.id}`}
+                href={courseHref(course)}
                 className="text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
               >
                 <span
@@ -199,6 +197,12 @@ export function AppShell({
       </nav>
     </div>
   );
+}
+
+function courseHref(course: NavigationCourse) {
+  return course.status === "draft"
+    ? `/courses/${course.id}/review`
+    : `/courses/${course.id}`;
 }
 
 function MobileNavItem({

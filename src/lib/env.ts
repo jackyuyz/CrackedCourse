@@ -6,12 +6,6 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });
 
-const serverEnvSchema = publicEnvSchema.extend({
-  EXTRACTION_PROVIDER: z.string().default("heuristic"),
-  EXTRACTION_MODEL: z.string().default("heuristic-v2"),
-  EXTRACTION_API_KEY: z.string().min(1).optional(),
-});
-
 const rawPublicEnv = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
@@ -25,15 +19,6 @@ export function hasSupabaseEnv() {
 
 export function getPublicEnv() {
   return publicEnvSchema.parse(rawPublicEnv);
-}
-
-export function getServerEnv() {
-  return serverEnvSchema.parse({
-    ...rawPublicEnv,
-    EXTRACTION_PROVIDER: process.env.EXTRACTION_PROVIDER,
-    EXTRACTION_MODEL: process.env.EXTRACTION_MODEL,
-    EXTRACTION_API_KEY: process.env.EXTRACTION_API_KEY,
-  });
 }
 
 export function isDemoMode() {

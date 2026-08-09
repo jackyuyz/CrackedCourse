@@ -9,6 +9,10 @@ const createCourseSchema = z.object({
   termName: z.string().trim().max(80).nullable().optional(),
   timeZone: z.string().trim().min(1).max(80).default("UTC"),
   colorKey: z.enum(["ocean", "orange", "gold", "navy"]).default("ocean"),
+  syllabusSha256: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
 });
 
 export async function POST(request: Request) {
@@ -26,6 +30,55 @@ export async function POST(request: Request) {
       "Check the course details and try again.",
       400,
     );
+  }
+
+  if (parsed.data.syllabusSha256) {
+    const { data: existingSource, error: sourceLookupError } =
+      await session.supabase
+        .from("syllabus_sources")
+        .select("id,course_id,original_name,processing_status")
+        .eq("owner_id", session.userId)
+        .eq("sha256", parsed.data.syllabusSha256)
+        .maybeSingle();
+
+    if (sourceLookupError) {
+      return errorResponse(
+        "SOURCE_LOOKUP_FAILED",
+        "We couldn’t check your existing syllabi. Try again.",
+        500,
+      );
+    }
+
+    if (existingSource) {
+      const { data: existingCourse, error: courseLookupError } =
+        await session.supabase
+          .from("courses")
+          .select("id,status")
+          .eq("id", existingSource.course_id)
+          .eq("owner_id", session.userId)
+          .maybeSingle();
+
+      if (courseLookupError || !existingCourse) {
+        return errorResponse(
+          "COURSE_LOOKUP_FAILED",
+          "We found the syllabus but couldn’t open its course. Try again.",
+          500,
+        );
+      }
+
+      return Response.json(
+        {
+          courseId: existingCourse.id,
+          courseStatus: existingCourse.status,
+          reused: true,
+          source: existingSource,
+        },
+        {
+          status: 200,
+          headers: { "Cache-Control": "private, no-store" },
+        },
+      );
+    }
   }
 
   const { data, error } = await session.supabase
@@ -50,5 +103,8 @@ export async function POST(request: Request) {
     );
   }
 
-  return Response.json({ courseId: data.id }, { status: 201 });
+  return Response.json(
+    { courseId: data.id, courseStatus: "draft", reused: false },
+    { status: 201 },
+  );
 }

@@ -20,6 +20,7 @@ export interface NavigationCourse {
   id: string;
   code: string;
   color: AppCourse["color"];
+  status: AppCourse["status"];
 }
 
 const validColors = new Set<AppCourse["color"]>([
@@ -40,13 +41,18 @@ export async function getNavigationCourses(
   viewer: Viewer,
 ): Promise<NavigationCourse[]> {
   if (viewer.isDemo) {
-    return demoCourses.map(({ id, code, color }) => ({ id, code, color }));
+    return demoCourses.map(({ id, code, color, status }) => ({
+      id,
+      code,
+      color,
+      status,
+    }));
   }
 
   const supabase = await createClient();
   const { data } = await supabase
     .from("courses")
-    .select("id,code,color_key")
+    .select("id,code,color_key,status")
     .neq("status", "archived")
     .order("created_at", { ascending: false })
     .limit(12);
@@ -55,6 +61,7 @@ export async function getNavigationCourses(
     id: course.id,
     code: course.code ?? "Course",
     color: color(course.color_key),
+    status: course.status as AppCourse["status"],
   }));
 }
 
