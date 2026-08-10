@@ -8,21 +8,11 @@ import {
 } from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
 
-export interface GradeWorkspaceAssessment {
-  id: string;
-  name: string;
-  earnedPoints: number | null;
-  maxPoints: number | null;
-  expectedPercent: number | null;
-  status: "planned" | "graded" | "excused";
-}
-
 export interface GradeWorkspaceCategory {
   id: string;
   name: string;
   weightPercent: number;
-  isComplete: boolean;
-  assessments: GradeWorkspaceAssessment[];
+  scorePercent: number | null;
 }
 
 export interface GradeWorkspaceData {
@@ -47,21 +37,6 @@ export async function getGradeWorkspace(
   if (viewer.isDemo) {
     const course =
       demoCourses.find((item) => item.id === courseId) ?? demoCourses[0];
-    const names = [
-      [
-        "Written Homework 1",
-        "Written Homework 2",
-        "Written Homework 3",
-        "Written Homework 4",
-      ],
-      [
-        "Programming Assignment 1",
-        "Programming Assignment 2",
-        "Programming Assignment 3",
-      ],
-      ["Midterm 1", "Midterm 2"],
-      [],
-    ];
     return {
       course: {
         id: course.id,
@@ -76,19 +51,7 @@ export async function getGradeWorkspace(
         id: `category-${categoryIndex}`,
         name: category.name,
         weightPercent: category.weightPercent,
-        isComplete: category.isComplete,
-        assessments: category.assessments.map(
-          (assessment, assessmentIndex) => ({
-            id: `assessment-${categoryIndex}-${assessmentIndex}`,
-            name:
-              names[categoryIndex]?.[assessmentIndex] ??
-              `Assessment ${assessmentIndex + 1}`,
-            earnedPoints: assessment.earnedPoints,
-            maxPoints: assessment.maxPoints,
-            expectedPercent: assessment.expectedPercent ?? null,
-            status: assessment.status,
-          }),
-        ),
+        scorePercent: category.scorePercent,
       })),
       policyWarnings: [
         "The lowest written homework score is dropped. This calculator does not apply that rule yet.",
@@ -100,7 +63,7 @@ export async function getGradeWorkspace(
   const { data: course } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,color_key,status,grading_categories(id,name,weight_percent,is_complete,display_order,assessments(id,name,earned_points,max_points,expected_percent,status,display_order)),grading_policies(description,calculator_support)",
+      "id,code,title,section,term_name,color_key,status,grading_categories(id,name,weight_percent,student_score_percent,display_order),grading_policies(description,calculator_support)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -123,26 +86,10 @@ export async function getGradeWorkspace(
         id: category.id,
         name: category.name,
         weightPercent: Number(category.weight_percent),
-        isComplete: category.is_complete,
-        assessments: (category.assessments ?? [])
-          .sort((a, b) => a.display_order - b.display_order)
-          .map((assessment) => ({
-            id: assessment.id,
-            name: assessment.name,
-            earnedPoints:
-              assessment.earned_points == null
-                ? null
-                : Number(assessment.earned_points),
-            maxPoints:
-              assessment.max_points == null
-                ? null
-                : Number(assessment.max_points),
-            expectedPercent:
-              assessment.expected_percent == null
-                ? null
-                : Number(assessment.expected_percent),
-            status: assessment.status,
-          })),
+        scorePercent:
+          category.student_score_percent == null
+            ? null
+            : Number(category.student_score_percent),
       })),
     policyWarnings: (course.grading_policies ?? [])
       .filter((policy) => policy.calculator_support === "unsupported")

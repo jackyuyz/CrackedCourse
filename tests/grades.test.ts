@@ -10,23 +10,17 @@ const categories: GradeCategory[] = [
   {
     name: "Homework",
     weightPercent: 20,
-    isComplete: true,
-    assessments: [
-      { status: "graded", earnedPoints: 90, maxPoints: 100 },
-      { status: "graded", earnedPoints: 40, maxPoints: 50 },
-    ],
+    scorePercent: (130 / 150) * 100,
   },
   {
     name: "Midterm",
     weightPercent: 30,
-    isComplete: true,
-    assessments: [{ status: "graded", earnedPoints: 84, maxPoints: 100 }],
+    scorePercent: 84,
   },
   {
     name: "Final",
     weightPercent: 50,
-    isComplete: false,
-    assessments: [],
+    scorePercent: null,
   },
 ];
 
@@ -35,6 +29,7 @@ describe("grade calculations", () => {
     const result = calculateCurrentGrade(categories);
     expect(result.representedWeightPercent).toBe(50);
     expect(result.gradePercent).toBeCloseTo(85.07, 2);
+    expect(result.coursePoints).toBeCloseTo(42.53, 2);
   });
 
   it("solves the average required on untouched remaining weight", () => {
@@ -47,17 +42,6 @@ describe("grade calculations", () => {
     expect(calculateTargetGrade(categories, 98).status).toBe("impossible");
     expect(calculateTargetGrade(categories, 40).status).toBe("secured");
 
-    const partial: GradeCategory[] = [
-      {
-        name: "Labs",
-        weightPercent: 100,
-        isComplete: false,
-        assessments: [
-          { status: "graded", earnedPoints: 18, maxPoints: 20 },
-          { status: "planned", earnedPoints: null, maxPoints: null },
-        ],
-      },
-    ];
-    expect(calculateTargetGrade(partial, 90).status).toBe("not_computable");
+    expect(calculateTargetGrade([], 90).status).toBe("not_computable");
   });
 });

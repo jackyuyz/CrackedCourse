@@ -196,38 +196,22 @@ export const demoGradeCategories: GradeCategory[] = [
   {
     name: "Written homework",
     weightPercent: 20,
-    isComplete: false,
-    assessments: [
-      { status: "graded", earnedPoints: 47, maxPoints: 50 },
-      { status: "graded", earnedPoints: 43, maxPoints: 50 },
-      { status: "planned", earnedPoints: null, maxPoints: 50 },
-      { status: "planned", earnedPoints: null, maxPoints: 50 },
-    ],
+    scorePercent: 90,
   },
   {
     name: "Programming assignments",
     weightPercent: 35,
-    isComplete: false,
-    assessments: [
-      { status: "graded", earnedPoints: 82, maxPoints: 100 },
-      { status: "planned", earnedPoints: null, maxPoints: 100 },
-      { status: "planned", earnedPoints: null, maxPoints: 100 },
-    ],
+    scorePercent: 82,
   },
   {
     name: "Midterms",
     weightPercent: 25,
-    isComplete: false,
-    assessments: [
-      { status: "planned", earnedPoints: null, maxPoints: 100 },
-      { status: "planned", earnedPoints: null, maxPoints: 100 },
-    ],
+    scorePercent: null,
   },
   {
     name: "Final exam",
     weightPercent: 20,
-    isComplete: false,
-    assessments: [],
+    scorePercent: null,
   },
 ];
 

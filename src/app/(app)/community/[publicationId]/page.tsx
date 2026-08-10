@@ -5,7 +5,6 @@ import {
   CalendarDays,
   Download,
   FileText,
-  GraduationCap,
   School,
   ShieldCheck,
   ThumbsUp,
@@ -13,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { CommunityActions } from "@/components/community-actions";
-import { PolicyNotes } from "@/components/policy-notes";
+import { CommunityGradeCalculator } from "@/components/community-grade-calculator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +35,9 @@ function eventDate(event: {
     ...(event.starts_at
       ? { hour: "numeric" as const, minute: "2-digit" as const }
       : {}),
-  }).format(new Date(event.start_date ? `${event.start_date}T12:00:00Z` : value));
+  }).format(
+    new Date(event.start_date ? `${event.start_date}T12:00:00Z` : value),
+  );
 }
 
 export default async function CommunityPublicationPage({
@@ -85,6 +86,12 @@ export default async function CommunityPublicationPage({
         />
       </div>
 
+      <CommunityGradeCalculator
+        publicationId={publication.id}
+        categories={publication.categories}
+        policies={publication.policies}
+      />
+
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card className="gap-0 py-0">
@@ -101,7 +108,9 @@ export default async function CommunityPublicationPage({
                     className="border-border flex items-start justify-between gap-4 border-b px-5 py-4 last:border-b-0"
                   >
                     <div>
-                      <p className="text-navy text-sm font-bold">{event.title}</p>
+                      <p className="text-navy text-sm font-bold">
+                        {event.title}
+                      </p>
                       <p className="text-muted-foreground mt-1 text-xs">
                         {eventDate(event)}
                         {event.location ? ` · ${event.location}` : ""}
@@ -129,7 +138,10 @@ export default async function CommunityPublicationPage({
             <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
               {publication.people.length > 0 ? (
                 publication.people.map((person) => (
-                  <div key={`${person.name}-${person.role}`} className="border-border rounded-xl border p-4">
+                  <div
+                    key={`${person.name}-${person.role}`}
+                    className="border-border rounded-xl border p-4"
+                  >
                     <p className="text-navy text-sm font-bold">{person.name}</p>
                     <p className="text-ocean mt-1 text-[10px] font-semibold capitalize">
                       {person.role.replaceAll("_", " ")}
@@ -146,32 +158,6 @@ export default async function CommunityPublicationPage({
         </div>
 
         <aside className="space-y-5">
-          <Card className="gap-0 py-0">
-            <CardHeader className="px-5 pt-5 pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-extrabold">
-                <GraduationCap className="text-ocean size-4" /> Grading structure
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 px-5 pb-5">
-              {publication.categories.map((category) => (
-                <div key={category.name}>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span>{category.name}</span>
-                    <span className="font-mono font-bold">
-                      {Number(category.weight_percent)}%
-                    </span>
-                  </div>
-                  <div className="bg-muted mt-1.5 h-1.5 overflow-hidden rounded-full">
-                    <div
-                      className="bg-ocean h-full rounded-full"
-                      style={{ width: `${Number(category.weight_percent)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
           <Card className="gap-0 py-0">
             <CardContent className="p-5">
               <div className="flex items-start gap-3">
@@ -202,10 +188,6 @@ export default async function CommunityPublicationPage({
               </p>
             </CardContent>
           </Card>
-
-          <PolicyNotes
-            policies={publication.policies.map((policy) => policy.description)}
-          />
         </aside>
       </div>
     </main>

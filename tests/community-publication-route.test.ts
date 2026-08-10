@@ -95,10 +95,13 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
 
   it("requires explicit sharing rights confirmation", async () => {
     const response = await POST(
-      new Request("http://localhost/api/courses/course-id/community-publication", {
-        method: "POST",
-        body: JSON.stringify({ rightsConfirmed: false }),
-      }),
+      new Request(
+        "http://localhost/api/courses/course-id/community-publication",
+        {
+          method: "POST",
+          body: JSON.stringify({ rightsConfirmed: false }),
+        },
+      ),
       { params: Promise.resolve({ courseId: "course-id" }) },
     );
 
@@ -108,10 +111,13 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
 
   it("selects only public-safe source fields and creates a versioned snapshot", async () => {
     const response = await POST(
-      new Request("http://localhost/api/courses/course-id/community-publication", {
-        method: "POST",
-        body: JSON.stringify({ rightsConfirmed: true }),
-      }),
+      new Request(
+        "http://localhost/api/courses/course-id/community-publication",
+        {
+          method: "POST",
+          body: JSON.stringify({ rightsConfirmed: true }),
+        },
+      ),
       { params: Promise.resolve({ courseId: "course-id" }) },
     );
 
@@ -121,6 +127,7 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
     expect(selection).not.toContain("meeting_url");
     expect(selection).not.toContain("email");
     expect(selection).not.toContain("assessments");
+    expect(selection).not.toContain("student_score_percent");
     expect(mocks.publicationInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         source_course_id: "course-id",

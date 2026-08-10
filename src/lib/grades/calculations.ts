@@ -1,77 +1,61 @@
-export interface GradeAssessment {
-  earnedPoints: number | null;
-  maxPoints: number | null;
-  expectedPercent?: number | null;
-  status: "planned" | "graded" | "excused";
-}
-
 export interface GradeCategory {
   name: string;
   weightPercent: number;
-  isComplete: boolean;
-  assessments: GradeAssessment[];
+  scorePercent: number | null;
 }
 
 export interface CurrentGradeResult {
   gradePercent: number | null;
+  coursePoints: number;
   representedWeightPercent: number;
+  totalWeightPercent: number;
   categories: Array<{
     name: string;
     scorePercent: number;
     weightPercent: number;
+    coursePoints: number;
   }>;
-}
-
-function gradedAssessments(category: GradeCategory) {
-  return category.assessments.filter(
-    (assessment) =>
-      assessment.status === "graded" &&
-      assessment.earnedPoints != null &&
-      assessment.maxPoints != null &&
-      assessment.maxPoints > 0,
-  );
 }
 
 export function calculateCurrentGrade(
   categories: GradeCategory[],
 ): CurrentGradeResult {
-  const represented = categories.flatMap((category) => {
-    const graded = gradedAssessments(category);
-    if (graded.length === 0) return [];
-
-    const earned = graded.reduce(
-      (sum, assessment) => sum + (assessment.earnedPoints ?? 0),
-      0,
-    );
-    const possible = graded.reduce(
-      (sum, assessment) => sum + (assessment.maxPoints ?? 0),
-      0,
-    );
-
+  const entered = categories.flatMap((category) => {
+    if (category.scorePercent == null || category.weightPercent <= 0) return [];
     return [
       {
         name: category.name,
-        scorePercent: (earned / possible) * 100,
+        scorePercent: category.scorePercent,
         weightPercent: category.weightPercent,
+        coursePoints: (category.scorePercent * category.weightPercent) / 100,
       },
     ];
   });
 
-  const representedWeightPercent = represented.reduce(
+  const representedWeightPercent = entered.reduce(
     (sum, category) => sum + category.weightPercent,
     0,
   );
-
+  const coursePoints = entered.reduce(
+    (sum, category) => sum + category.coursePoints,
+    0,
+  );
+  const totalWeightPercent = categories.reduce(
+    (sum, category) => sum + Math.max(0, category.weightPercent),
+    0,
+  );
   const gradePercent =
     representedWeightPercent === 0
       ? null
-      : represented.reduce(
-          (sum, category) =>
-            sum + category.scorePercent * category.weightPercent,
-          0,
-        ) / representedWeightPercent;
+      : (coursePoints / representedWeightPercent) * 100;
 
-  return { gradePercent, representedWeightPercent, categories: represented };
+  return {
+    gradePercent,
+    coursePoints,
+    representedWeightPercent,
+    totalWeightPercent,
+    categories: entered,
+  };
 }
 
 export type TargetGradeResult =
@@ -99,101 +83,50 @@ export function calculateTargetGrade(
   categories: GradeCategory[],
   targetPercent: number,
 ): TargetGradeResult {
-  let fixedContribution = 0;
-  let remainingWeight = 0;
-
-  for (const category of categories) {
-    const active = category.assessments.filter(
-      (assessment) => assessment.status !== "excused",
-    );
-
-    if (active.length === 0) {
-      if (!category.isComplete) remainingWeight += category.weightPercent;
-      continue;
-    }
-
-    const graded = gradedAssessments(category);
-    const planned = active.filter(
-      (assessment) => assessment.status === "planned",
-    );
-
-    if (category.isComplete) {
-      const earned = graded.reduce(
-        (sum, assessment) => sum + (assessment.earnedPoints ?? 0),
-        0,
-      );
-      const possible = graded.reduce(
-        (sum, assessment) => sum + (assessment.maxPoints ?? 0),
-        0,
-      );
-
-      if (possible > 0) {
-        fixedContribution += category.weightPercent * (earned / possible);
-      }
-      continue;
-    }
-
-    if (planned.some((assessment) => assessment.maxPoints == null)) {
-      return {
-        status: "not_computable",
-        requiredPercent: null,
-        fixedContribution,
-        remainingWeight,
-        reason: `Add maximum points for the remaining ${category.name} work.`,
-      };
-    }
-
-    const totalPlannedPoints = active.reduce(
-      (sum, assessment) => sum + (assessment.maxPoints ?? 0),
-      0,
-    );
-
-    if (totalPlannedPoints <= 0) {
-      remainingWeight += category.weightPercent;
-      continue;
-    }
-
-    const earnedPoints = graded.reduce(
-      (sum, assessment) => sum + (assessment.earnedPoints ?? 0),
-      0,
-    );
-    const remainingPoints = planned.reduce(
-      (sum, assessment) => sum + (assessment.maxPoints ?? 0),
-      0,
-    );
-
-    fixedContribution +=
-      category.weightPercent * (earnedPoints / totalPlannedPoints);
-    remainingWeight +=
-      category.weightPercent * (remainingPoints / totalPlannedPoints);
+  if (categories.length === 0) {
+    return {
+      status: "not_computable",
+      requiredPercent: null,
+      fixedContribution: 0,
+      remainingWeight: 0,
+      reason: "No grading weights were found in this syllabus.",
+    };
   }
+
+  const current = calculateCurrentGrade(categories);
+  const remainingWeight = categories.reduce(
+    (sum, category) =>
+      category.scorePercent == null
+        ? sum + Math.max(0, category.weightPercent)
+        : sum,
+    0,
+  );
 
   if (remainingWeight === 0) {
     return {
-      status: fixedContribution >= targetPercent ? "secured" : "impossible",
+      status: current.coursePoints >= targetPercent ? "secured" : "impossible",
       requiredPercent: null,
-      fixedContribution,
+      fixedContribution: current.coursePoints,
       remainingWeight,
     };
   }
 
   const requiredPercent =
-    ((targetPercent - fixedContribution) / remainingWeight) * 100;
+    ((targetPercent - current.coursePoints) / remainingWeight) * 100;
 
   if (requiredPercent <= 0) {
     return {
       status: "secured",
       requiredPercent,
-      fixedContribution,
+      fixedContribution: current.coursePoints,
       remainingWeight,
     };
   }
-
   if (requiredPercent > 100) {
     return {
       status: "impossible",
       requiredPercent,
-      fixedContribution,
+      fixedContribution: current.coursePoints,
       remainingWeight,
     };
   }
@@ -201,7 +134,7 @@ export function calculateTargetGrade(
   return {
     status: "required",
     requiredPercent,
-    fixedContribution,
+    fixedContribution: current.coursePoints,
     remainingWeight,
   };
 }
