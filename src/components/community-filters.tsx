@@ -35,7 +35,7 @@ export function CommunityFilters({
   return (
     <form
       onSubmit={submit}
-      className="border-border bg-card grid gap-3 rounded-2xl border p-4 shadow-[0_5px_20px_rgba(2,48,71,0.04)] lg:grid-cols-[1.2fr_1fr_130px_auto]"
+      className="border-border bg-card grid items-start gap-3 rounded-2xl border p-4 shadow-[0_5px_20px_rgba(2,48,71,0.04)] lg:grid-cols-[1.2fr_1fr_130px_auto]"
     >
       <InstitutionCombobox
         value={school}

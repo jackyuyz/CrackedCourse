@@ -46,7 +46,7 @@ export default async function SettingsPage() {
           })}
         </nav>
         <div className="space-y-5">
-          <Card className="gap-0 py-0 shadow-[0_5px_20px_rgba(2,48,71,0.04)]">
+          <Card className="overflow-visible gap-0 py-0 shadow-[0_5px_20px_rgba(2,48,71,0.04)]">
             <CardHeader className="border-border border-b px-5 py-4">
               <CardTitle className="text-navy text-sm font-extrabold">
                 Profile

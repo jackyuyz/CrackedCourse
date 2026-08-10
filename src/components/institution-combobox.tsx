@@ -125,7 +125,7 @@ export function InstitutionCombobox({
         <div
           id={listId}
           role="listbox"
-          className="bg-popover ring-foreground/10 absolute z-70 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl p-1.5 shadow-xl ring-1"
+          className="bg-popover ring-foreground/10 absolute z-70 mt-1.5 max-h-80 w-full overflow-y-auto rounded-xl p-1.5 shadow-xl ring-1"
         >
           {loading ? (
             <div className="text-muted-foreground flex items-center gap-2 px-3 py-3 text-xs">

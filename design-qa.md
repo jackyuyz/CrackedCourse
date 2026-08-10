@@ -1,55 +1,52 @@
-# Design QA — Course overview policy notes
+# Design QA
 
-## Evidence
+## Scope
 
-- Source visual truth: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_CSH1XS/截屏2026-08-09 16.55.42.png`
-- Browser-rendered implementation: `/private/tmp/cracked-course-overview-policy-final.png`
-- Side-by-side comparison: `/private/tmp/cracked-course-policy-comparison.png`
-- Expanded-state capture: `/private/tmp/cracked-course-overview-policy-expanded-1422.png`
-- Source pixels: `1423 × 1138`
-- Implementation pixels: `1422 × 1135`, normalized to `1423 × 1138` only for the comparison board
-- Browser CSS viewport: `1422 × 1135`; device pixel ratio: `1.1`
-- State: authenticated course Overview; policy group collapsed by default
+- Community course discovery search-row alignment.
+- Settings default-school autocomplete visibility and usable result height.
 
-## Full-view comparison
+## Visual truth
 
-The requested hierarchy is visible in the right rail: Grading structure, then the saved syllabus PDF, then one compact policy summary. The reference screen's established type, card radii, ocean/gold tokens, borders, and spacing are preserved. The global sidebar is present in the implementation capture but outside the scope of the supplied main-content crop.
+- Community reference: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_Yf0gwI/截屏2026-08-09 21.40.44.png` (1103 × 241 px).
+- Settings reference: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_pVu8Wu/截屏2026-08-09 21.43.16.png` (700 × 220 px).
+- Community implementation capture: `output/design-qa/community-search-after.png` (2326 × 1125 px).
+- Settings implementation capture: `output/design-qa/settings-school-dropdown-after.png` (2326 × 1125 px).
+- Browser viewport: 2327 × 1125 CSS px at device-pixel ratio 1.1.
 
-No separate focused crop was required because the right rail is fully legible at the original comparison resolution and is the only changed region.
+## Verified states
 
-## Required fidelity surfaces
-
-- Fonts and typography: existing Geist hierarchy, weights, sizes, line heights, and truncation are retained.
-- Spacing and layout rhythm: the PDF card precedes the policy section with the existing `space-y-5` rhythm; the collapsed summary does not stretch the page.
-- Colors and visual tokens: existing gold warning, ocean status, navy text, border, and muted tokens are reused.
-- Image quality and asset fidelity: no raster assets were introduced or replaced; existing Lucide UI icons remain consistent with the product.
-- Copy and content: the policy count and saved-reference explanation are visible without exposing the full policy text until requested.
-
-## Interaction and runtime checks
-
-- Default state: closed.
-- Open action: clicking the summary sets the native `details` element to open.
-- Content: all 7 saved policies render.
-- Overflow: the list is capped at `420px` and scrolls internally (`881px` content height in the tested course).
-- Console: no errors or warnings after reload and interaction.
-
-## Findings
-
-No actionable P0, P1, or P2 differences remain for the requested change.
+- Community: signed-in discovery page, Carnegie Mellon University selected, course query and year empty.
+- Settings: signed-in Profile page, Default school query set to `university`, result list open.
 
 ## Comparison history
 
-- Before: each unsupported policy rendered as a separate full-height alert above the PDF card.
-- Fix: extracted a shared collapsible policy component, moved the PDF before it on Overview, and reused the same interaction in Grades.
-- Post-fix evidence: the final collapsed capture shows one compact summary beneath the PDF; the expanded capture confirms the bounded scrolling list.
+### Pass 1 findings
 
-## Implementation checklist
+- P1: The community search icon was vertically shifted because the institution field's location helper text stretched the grid row while sibling controls remained vertically centered against that taller row.
+- P1: The settings autocomplete was clipped at the Profile card boundary because the shared Card component uses hidden overflow.
+- P2: The school result list exposed too few rows for a broad query.
 
-- [x] PDF displayed above policy notes
-- [x] Policy notes collapsed by default
-- [x] Count visible in the collapsed state
-- [x] All policies available after expansion
-- [x] Long lists scroll inside the component
-- [x] Overview and Grades share one policy-note implementation
+### Fixes
+
+- Aligned community filter controls to the start of the grid row so all input shells share the same vertical origin.
+- Allowed visible overflow on the Settings Profile card so the autocomplete can extend beyond the card without changing the card layout.
+- Increased the autocomplete's scrollable maximum height from 18rem to 20rem.
+
+### Post-fix evidence
+
+- Community search icon center Y: 222.670453 px.
+- Community input center Y: 222.670450 px.
+- Alignment delta: less than 0.001 px.
+- Settings listbox height: 320 px with 12 options rendered for `university`.
+- The list extends 209.1 px beyond the Profile card and remains independently scrollable (`overflow-y: auto`).
+
+## Fidelity surface review
+
+- Typography: unchanged; existing product type scale and weights retained.
+- Spacing and alignment: corrected only at the affected controls.
+- Color, borders, radius, and shadows: existing design tokens retained.
+- Icons: existing Lucide icons retained; no replacement assets required.
+- Copy and interaction behavior: unchanged except for the taller visible result area.
+- Responsive behavior: grid alignment applies at every breakpoint; dropdown remains constrained to its combobox width and viewport-scrollable through its own list.
 
 final result: passed
