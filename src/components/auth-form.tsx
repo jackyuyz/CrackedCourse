@@ -7,6 +7,8 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Mail,
   ShieldCheck,
@@ -48,6 +50,7 @@ export function AuthForm({
   );
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<AuthStatus>("idle");
   const [formError, setFormError] = useState<string | null>(null);
   const [showProvidedError, setShowProvidedError] = useState(Boolean(error));
@@ -59,6 +62,7 @@ export function AuthForm({
     setShowProvidedError(false);
     setPassword("");
     setPasswordConfirmation("");
+    setShowPassword(false);
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -309,7 +313,7 @@ export function AuthForm({
                     <KeyRound className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete={
                         mode === "signUp" ? "new-password" : "current-password"
                       }
@@ -322,9 +326,25 @@ export function AuthForm({
                       }
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className="h-11 pl-10"
+                      className="h-11 pr-11 pl-10"
                       disabled={!configured || status === "submitting"}
                     />
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-navy absolute top-1/2 right-3 -translate-y-1/2 rounded-sm transition-colors"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      aria-pressed={showPassword}
+                      disabled={!configured || status === "submitting"}
+                    >
+                      {showPassword ? (
+                        <Eye className="size-4" />
+                      ) : (
+                        <EyeOff className="size-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -342,7 +362,7 @@ export function AuthForm({
                     <ShieldCheck className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <Input
                       id="password-confirmation"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
                       required
                       minLength={8}
@@ -351,9 +371,27 @@ export function AuthForm({
                       onChange={(event) =>
                         setPasswordConfirmation(event.target.value)
                       }
-                      className="h-11 pl-10"
+                      className="h-11 pr-11 pl-10"
                       disabled={!configured || status === "submitting"}
                     />
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-navy absolute top-1/2 right-3 -translate-y-1/2 rounded-sm transition-colors"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={
+                        showPassword
+                          ? "Hide password confirmation"
+                          : "Show password confirmation"
+                      }
+                      aria-pressed={showPassword}
+                      disabled={!configured || status === "submitting"}
+                    >
+                      {showPassword ? (
+                        <Eye className="size-4" />
+                      ) : (
+                        <EyeOff className="size-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               ) : null}
