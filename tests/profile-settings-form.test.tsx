@@ -44,11 +44,14 @@ describe("ProfileSettingsForm", () => {
       expect(fetchMock).toHaveBeenCalledWith("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: "Jacky Zheng" }),
+        body: JSON.stringify({
+          displayName: "Jacky Zheng",
+          defaultInstitutionId: null,
+        }),
       });
     });
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Display name saved everywhere.",
+      "Profile defaults saved everywhere.",
     );
     expect(navigationMocks.refresh).toHaveBeenCalledOnce();
     expect(saveButton).toBeDisabled();

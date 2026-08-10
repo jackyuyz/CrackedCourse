@@ -26,10 +26,22 @@ describe("POST /api/courses primary time zone", () => {
       }),
     };
     mocks.insert.mockReturnValue(courseBuilder);
+    const profileBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { default_institution_id: "institution-id" },
+        error: null,
+      }),
+    };
     mocks.getApiSession.mockResolvedValue({
       userId: "user-id",
       supabase: {
-        from: vi.fn(() => ({ insert: mocks.insert })),
+        from: vi.fn((table: string) =>
+          table === "profiles"
+            ? profileBuilder
+            : { insert: mocks.insert },
+        ),
       },
     });
   });
@@ -45,7 +57,10 @@ describe("POST /api/courses primary time zone", () => {
 
     expect(response.status).toBe(201);
     expect(mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ time_zone: "America/New_York" }),
+      expect.objectContaining({
+        time_zone: "America/New_York",
+        institution_id: "institution-id",
+      }),
     );
   });
 

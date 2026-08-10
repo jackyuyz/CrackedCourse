@@ -16,9 +16,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { InstitutionCombobox } from "@/components/institution-combobox";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/lib/supabase/client";
 import { PRIMARY_TIME_ZONE } from "@/lib/time-zone";
+import type { InstitutionOption } from "@/lib/institutions";
 import { cn } from "@/lib/utils";
 
 type Phase =
@@ -69,13 +71,20 @@ async function responseBody<T>(response: Response, fallback: string) {
   return body;
 }
 
-export function CourseUploader({ demo }: { demo: boolean }) {
+export function CourseUploader({
+  demo,
+  defaultInstitution,
+}: {
+  demo: boolean;
+  defaultInstitution?: InstitutionOption | null;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [institution, setInstitution] = useState(defaultInstitution ?? null);
 
   const busy = !["idle", "error"].includes(phase);
 
@@ -135,6 +144,7 @@ export function CourseUploader({ demo }: { demo: boolean }) {
           timeZone: PRIMARY_TIME_ZONE,
           colorKey: "ocean",
           syllabusSha256: sha256,
+          institutionId: institution?.id ?? null,
         }),
       });
       let resolution = await responseBody<CourseResolution>(
@@ -305,6 +315,22 @@ export function CourseUploader({ demo }: { demo: boolean }) {
       </Card>
 
       <aside className="space-y-4">
+        <Card className="gap-0 py-0 shadow-none">
+          <CardContent className="p-5">
+            <h2 className="text-navy text-sm font-extrabold">Course school</h2>
+            <p className="text-muted-foreground mt-2 text-xs leading-5">
+              We use your profile default. Change it here only when this course
+              belongs to another school.
+            </p>
+            <div className="mt-3">
+              <InstitutionCombobox
+                value={institution}
+                onChange={setInstitution}
+                disabled={demo || busy}
+              />
+            </div>
+          </CardContent>
+        </Card>
         <Card className="gap-0 py-0 shadow-none">
           <CardContent className="p-5">
             <div className="flex items-center gap-3">

@@ -16,6 +16,7 @@ const createCourseSchema = z.object({
     .string()
     .regex(/^[a-f0-9]{64}$/)
     .optional(),
+  institutionId: z.uuid().nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -84,6 +85,38 @@ export async function POST(request: Request) {
     }
   }
 
+  let institutionId = parsed.data.institutionId ?? null;
+  if (parsed.data.institutionId === undefined) {
+    const { data: profile, error: profileError } = await session.supabase
+      .from("profiles")
+      .select("default_institution_id")
+      .eq("id", session.userId)
+      .maybeSingle();
+    if (profileError) {
+      return errorResponse(
+        "PROFILE_LOOKUP_FAILED",
+        "We couldn’t load your course defaults. Try again.",
+        500,
+      );
+    }
+    institutionId = profile?.default_institution_id ?? null;
+  } else if (institutionId) {
+    const { data: institution, error: institutionError } =
+      await session.supabase
+        .from("institutions")
+        .select("id")
+        .eq("id", institutionId)
+        .eq("is_active", true)
+        .maybeSingle();
+    if (institutionError || !institution) {
+      return errorResponse(
+        "INVALID_INSTITUTION",
+        "Choose a school from the U.S. or Canadian directory.",
+        400,
+      );
+    }
+  }
+
   const { data, error } = await session.supabase
     .from("courses")
     .insert({
@@ -93,6 +126,7 @@ export async function POST(request: Request) {
       term_name: parsed.data.termName ?? null,
       time_zone: parsed.data.timeZone,
       color_key: parsed.data.colorKey,
+      institution_id: institutionId,
       status: "draft",
     })
     .select("id")

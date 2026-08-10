@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, LayoutDashboard } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LibraryBig } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const workspaceLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/community", label: "Community", icon: LibraryBig },
 ] as const;
 
 export function WorkspaceNavigation() {
@@ -25,7 +26,10 @@ function WorkspaceNavigationLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav className="mt-5 space-y-1 px-3" aria-label="Workspace navigation">
       {workspaceLinks.map((item) => {
-        const active = pathname === item.href;
+        const active =
+          pathname === item.href ||
+          (item.href === "/community" &&
+            Boolean(pathname?.startsWith("/community/")));
 
         return (
           <Link

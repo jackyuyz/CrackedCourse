@@ -57,6 +57,7 @@ export default async function SettingsPage() {
                 displayName={viewer.displayName}
                 email={viewer.email}
                 primaryTimeZone={PRIMARY_TIME_ZONE}
+                defaultInstitution={viewer.defaultInstitution}
                 readOnly={viewer.isDemo}
               />
             </CardContent>

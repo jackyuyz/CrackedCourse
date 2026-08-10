@@ -1,12 +1,14 @@
 import "server-only";
 
 import { hasSupabaseEnv, isDemoMode } from "@/lib/env";
+import type { InstitutionOption } from "@/lib/institutions";
 import { createClient } from "@/lib/supabase/server";
 
 export interface Viewer {
   id: string;
   email: string;
   displayName: string;
+  defaultInstitution: InstitutionOption | null;
   isDemo: boolean;
 }
 
@@ -16,6 +18,14 @@ export async function getViewer(): Promise<Viewer | null> {
       id: "00000000-0000-4000-8000-000000000001",
       email: "maya@example.edu",
       displayName: "Maya",
+      defaultInstitution: {
+        id: "00000000-0000-4000-8000-000000000100",
+        name: "Carnegie Mellon University",
+        city: "Pittsburgh",
+        region: "PA",
+        country: "US",
+        timeZone: "America/New_York",
+      },
       isDemo: true,
     };
   }
@@ -36,15 +46,30 @@ export async function getViewer(): Promise<Viewer | null> {
       : email.split("@")[0] || "Student";
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select(
+      "display_name,institutions:default_institution_id(id,canonical_name,city,region_code,country_code,default_time_zone)",
+    )
     .eq("id", data.claims.sub)
     .maybeSingle();
   const displayName = profile?.display_name?.trim() || metadataDisplayName;
+  const institution = Array.isArray(profile?.institutions)
+    ? profile.institutions[0]
+    : profile?.institutions;
 
   return {
     id: data.claims.sub,
     email,
     displayName,
+    defaultInstitution: institution
+      ? {
+          id: institution.id,
+          name: institution.canonical_name,
+          city: institution.city,
+          region: institution.region_code,
+          country: institution.country_code as "US" | "CA",
+          timeZone: institution.default_time_zone,
+        }
+      : null,
     isDemo: false,
   };
 }

@@ -17,7 +17,10 @@ export default async function NewCoursePage() {
         title="Add a course"
         description="Upload one text-based syllabus PDF. You’ll verify every useful detail before anything is published."
       />
-      <CourseUploader demo={viewer.isDemo} />
+      <CourseUploader
+        demo={viewer.isDemo}
+        defaultInstitution={viewer.defaultInstitution}
+      />
     </main>
   );
 }

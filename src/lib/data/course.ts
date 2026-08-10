@@ -9,6 +9,7 @@ import {
   type AppEvent,
 } from "@/lib/demo-data";
 import { createClient } from "@/lib/supabase/server";
+import type { InstitutionOption } from "@/lib/institutions";
 
 export interface CoursePerson {
   name: string;
@@ -45,6 +46,12 @@ export interface CourseIdentity extends Pick<
 > {
   termStart: string | null;
   termEnd: string | null;
+  institution: InstitutionOption | null;
+  publication: {
+    id: string;
+    status: "published" | "hidden";
+    version: number;
+  } | null;
 }
 
 export async function getCourseIdentity(
@@ -53,19 +60,43 @@ export async function getCourseIdentity(
 ): Promise<CourseIdentity | null> {
   if (viewer.isDemo) {
     const course = demoCourses.find((item) => item.id === courseId);
-    return course ? { ...course, termStart: null, termEnd: null } : null;
+    return course
+      ? {
+          ...course,
+          termStart: null,
+          termEnd: null,
+          institution: {
+            id: "00000000-0000-4000-8000-000000000100",
+            name: "Carnegie Mellon University",
+            city: "Pittsburgh",
+            region: "PA",
+            country: "US",
+            timeZone: "America/New_York",
+          },
+          publication: null,
+        }
+      : null;
   }
 
   const supabase = await createClient();
   const { data: course } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,term_start,term_end,time_zone,color_key,status",
+      "id,code,title,section,term_name,term_start,term_end,time_zone,color_key,status,institutions:institution_id(id,canonical_name,city,region_code,country_code,default_time_zone)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
     .maybeSingle();
   if (!course) return null;
+  const institution = Array.isArray(course.institutions)
+    ? course.institutions[0]
+    : course.institutions;
+  const { data: publication } = await supabase
+    .from("community_publications")
+    .select("id,publication_status,snapshot_version")
+    .eq("source_course_id", course.id)
+    .eq("owner_id", viewer.id)
+    .maybeSingle();
 
   return {
     id: course.id,
@@ -80,6 +111,23 @@ export async function getCourseIdentity(
       ? course.color_key
       : "ocean") as AppCourse["color"],
     status: course.status,
+    institution: institution
+      ? {
+          id: institution.id,
+          name: institution.canonical_name,
+          city: institution.city,
+          region: institution.region_code,
+          country: institution.country_code as "US" | "CA",
+          timeZone: institution.default_time_zone,
+        }
+      : null,
+    publication: publication
+      ? {
+          id: publication.id,
+          status: publication.publication_status,
+          version: publication.snapshot_version,
+        }
+      : null,
   };
 }
 

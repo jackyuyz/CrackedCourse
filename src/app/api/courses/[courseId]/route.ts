@@ -19,6 +19,7 @@ const updateCourseSchema = z
     timeZone: z.string().trim().min(1).max(80).refine(isValidTimeZone),
     colorKey: z.enum(["ocean", "orange", "gold", "navy"]),
     status: z.enum(["active", "archived"]),
+    institutionId: z.uuid().nullable(),
   })
   .refine(
     (value) =>
@@ -48,6 +49,23 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { courseId } = await params;
+  if (parsed.data.institutionId) {
+    const { data: institution, error: institutionError } =
+      await session.supabase
+        .from("institutions")
+        .select("id")
+        .eq("id", parsed.data.institutionId)
+        .eq("is_active", true)
+        .maybeSingle();
+    if (institutionError || !institution) {
+      return errorResponse(
+        "INVALID_INSTITUTION",
+        "Choose a school from the U.S. or Canadian directory.",
+        400,
+      );
+    }
+  }
+
   const { data: course, error } = await session.supabase
     .from("courses")
     .update({
@@ -60,11 +78,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       time_zone: parsed.data.timeZone,
       color_key: parsed.data.colorKey,
       status: parsed.data.status,
+      institution_id: parsed.data.institutionId,
     })
     .eq("id", courseId)
     .eq("owner_id", session.userId)
     .select(
-      "id,code,title,section,term_name,term_start,term_end,time_zone,color_key,status,updated_at",
+      "id,code,title,section,term_name,term_start,term_end,time_zone,color_key,status,institution_id,updated_at",
     )
     .maybeSingle();
 

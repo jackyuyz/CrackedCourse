@@ -7,6 +7,7 @@ import { getApiSession } from "@/lib/auth/api";
 
 const updateProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(80),
+  defaultInstitutionId: z.uuid().nullable().optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -30,11 +31,34 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (parsed.data.defaultInstitutionId) {
+    const { data: institution, error: institutionError } =
+      await session.supabase
+        .from("institutions")
+        .select("id")
+        .eq("id", parsed.data.defaultInstitutionId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+    if (institutionError || !institution) {
+      return errorResponse(
+        "INVALID_INSTITUTION",
+        "Choose a school from the U.S. or Canadian directory.",
+        400,
+      );
+    }
+  }
+
   const { data: profile, error } = await session.supabase
     .from("profiles")
-    .update({ display_name: parsed.data.displayName })
+    .update({
+      display_name: parsed.data.displayName,
+      ...(parsed.data.defaultInstitutionId !== undefined
+        ? { default_institution_id: parsed.data.defaultInstitutionId }
+        : {}),
+    })
     .eq("id", session.userId)
-    .select("display_name")
+    .select("display_name,default_institution_id")
     .maybeSingle();
 
   if (error) {
@@ -53,7 +77,12 @@ export async function PATCH(request: Request) {
   revalidatePath("/dashboard");
 
   return Response.json(
-    { profile: { displayName: profile.display_name } },
+    {
+      profile: {
+        displayName: profile.display_name,
+        defaultInstitutionId: profile.default_institution_id,
+      },
+    },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

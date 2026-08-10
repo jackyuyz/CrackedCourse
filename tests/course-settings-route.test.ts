@@ -28,6 +28,7 @@ const validSettings = {
   timeZone: "America/New_York",
   colorKey: "ocean",
   status: "active",
+  institutionId: null,
 };
 
 function request(body: unknown) {
@@ -76,6 +77,7 @@ describe("PATCH /api/courses/[courseId]", () => {
       time_zone: validSettings.timeZone,
       color_key: validSettings.colorKey,
       status: validSettings.status,
+      institution_id: null,
     });
     expect(mocks.eq).toHaveBeenNthCalledWith(1, "id", "course-id");
     expect(mocks.eq).toHaveBeenNthCalledWith(2, "owner_id", "owner-id");

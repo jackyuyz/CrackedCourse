@@ -13,6 +13,8 @@ import {
   Palette,
   Settings2,
   Trash2,
+  Globe2,
+  EyeOff,
 } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 
@@ -34,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { InstitutionCombobox } from "@/components/institution-combobox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -43,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CourseIdentity } from "@/lib/data/course";
+import type { InstitutionOption } from "@/lib/institutions";
 import { cn } from "@/lib/utils";
 
 type EditableStatus = "active" | "archived";
@@ -57,6 +61,7 @@ interface CourseSettingsForm {
   timeZone: string;
   colorKey: CourseIdentity["color"];
   status: EditableStatus;
+  institution: InstitutionOption | null;
 }
 
 const colors: Array<{
@@ -294,6 +299,7 @@ function formFromCourse(course: CourseIdentity): CourseSettingsForm {
     timeZone: course.timeZone,
     colorKey: course.color,
     status: course.status === "archived" ? "archived" : "active",
+    institution: course.institution,
   };
 }
 
@@ -307,9 +313,13 @@ export function CourseActionsMenu({
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [unpublishOpen, setUnpublishOpen] = useState(false);
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [form, setForm] = useState(() => formFromCourse(course));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function openSettings() {
@@ -357,6 +367,7 @@ export function CourseActionsMenu({
           timeZone: form.timeZone,
           colorKey: form.colorKey,
           status: form.status,
+          institutionId: form.institution?.id ?? null,
         }),
       });
       const body = (await response.json().catch(() => null)) as {
@@ -412,6 +423,70 @@ export function CourseActionsMenu({
     }
   }
 
+  async function publishCourse() {
+    if (sharing || readOnly || !rightsConfirmed) return;
+    setSharing(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/courses/${course.id}/community-publication`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rightsConfirmed: true }),
+        },
+      );
+      const body = (await response.json().catch(() => null)) as {
+        error?: { message?: string };
+      } | null;
+      if (!response.ok) {
+        throw new Error(
+          body?.error?.message ?? "We couldn’t publish this course. Try again.",
+        );
+      }
+      setPublishOpen(false);
+      setRightsConfirmed(false);
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "We couldn’t publish this course. Try again.",
+      );
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function unpublishCourse() {
+    if (sharing || readOnly) return;
+    setSharing(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/courses/${course.id}/community-publication`,
+        { method: "DELETE" },
+      );
+      const body = (await response.json().catch(() => null)) as {
+        error?: { message?: string };
+      } | null;
+      if (!response.ok) {
+        throw new Error(
+          body?.error?.message ??
+            "We couldn’t remove this course from the community.",
+        );
+      }
+      setUnpublishOpen(false);
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "We couldn’t unpublish it.",
+      );
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -437,6 +512,49 @@ export function CourseActionsMenu({
               Open calendar
             </Link>
           </DropdownMenuItem>
+          {course.publication?.status === "published" ? (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href={`/community/${course.publication.id}`}>
+                  <Globe2 />
+                  View public course
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={readOnly}
+                onSelect={() => {
+                  setError(null);
+                  setRightsConfirmed(false);
+                  setPublishOpen(true);
+                }}
+              >
+                <Globe2 />
+                Update public snapshot
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={readOnly}
+                onSelect={() => {
+                  setError(null);
+                  setUnpublishOpen(true);
+                }}
+              >
+                <EyeOff />
+                Unpublish
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem
+              disabled={readOnly}
+              onSelect={() => {
+                setError(null);
+                setRightsConfirmed(false);
+                setPublishOpen(true);
+              }}
+            >
+              <Globe2 />
+              Publish to community
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem asChild>
             <Link href={`/courses/${course.id}/grades`}>
               <GraduationCap />
@@ -535,6 +653,45 @@ export function CourseActionsMenu({
                   disabled={readOnly || saving}
                   placeholder="Lecture 1 or Section A"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="course-institution">School</Label>
+                <InstitutionCombobox
+                  inputId="course-institution"
+                  value={form.institution}
+                  onChange={(institution) =>
+                    updateField("institution", institution)
+                  }
+                  disabled={readOnly || saving}
+                />
+                <p className="text-muted-foreground text-xs">
+                  This determines where the course appears if you publish it to
+                  the community.
+                </p>
+              </div>
+            </section>
+
+            <section
+              className="border-border space-y-3 border-t pt-5"
+              aria-labelledby="sharing-heading"
+            >
+              <div>
+                <h3
+                  id="sharing-heading"
+                  className="flex items-center gap-2 font-semibold"
+                >
+                  {course.publication?.status === "published" ? (
+                    <Globe2 className="text-ocean size-4" />
+                  ) : (
+                    <EyeOff className="text-muted-foreground size-4" />
+                  )}
+                  Community sharing
+                </h3>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {course.publication?.status === "published"
+                    ? `Published snapshot v${course.publication.version}. Use the course menu to view or update it.`
+                    : "Private. Publishing is a separate confirmation step after these settings are saved."}
+                </p>
               </div>
             </section>
 
@@ -700,6 +857,130 @@ export function CourseActionsMenu({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={publishOpen}
+        onOpenChange={(open) => {
+          if (!sharing) {
+            setPublishOpen(open);
+            if (!open) {
+              setError(null);
+              setRightsConfirmed(false);
+            }
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {course.publication?.status === "published"
+                ? "Update the public snapshot?"
+                : "Publish this course?"}
+            </DialogTitle>
+            <DialogDescription>
+              Signed-in students can view the structured course information
+              and original syllabus PDF. Your private grades, notes, staff
+              contact details, and meeting links are never included.
+            </DialogDescription>
+          </DialogHeader>
+          {!course.institution ? (
+            <p className="bg-gold/10 text-navy rounded-lg px-3 py-2 text-xs">
+              Save a school in Course settings before publishing.
+            </p>
+          ) : null}
+          <label className="border-border flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-xs leading-5">
+            <input
+              type="checkbox"
+              checked={rightsConfirmed}
+              onChange={(event) => setRightsConfirmed(event.target.checked)}
+              disabled={sharing}
+              className="accent-ocean mt-1 size-4 shrink-0"
+            />
+            <span>
+              I confirm that I have permission to share this syllabus and the
+              course information extracted from it.
+            </span>
+          </label>
+          {error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={sharing}
+              onClick={() => setPublishOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={publishCourse}
+              disabled={sharing || !rightsConfirmed || !course.institution}
+            >
+              {sharing ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Globe2 className="size-4" />
+              )}
+              {course.publication?.status === "published"
+                ? "Update snapshot"
+                : "Publish course"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={unpublishOpen}
+        onOpenChange={(open) => {
+          if (!sharing) {
+            setUnpublishOpen(open);
+            if (!open) setError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove this course from the community?</DialogTitle>
+            <DialogDescription>
+              The published snapshot and PDF will stop being visible to other
+              students. Your private workspace and previous imports stay
+              intact, and you can publish it again later.
+            </DialogDescription>
+          </DialogHeader>
+          {error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={sharing}
+              onClick={() => setUnpublishOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={sharing}
+              onClick={unpublishCourse}
+            >
+              {sharing ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <EyeOff className="size-4" />
+              )}
+              Unpublish
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

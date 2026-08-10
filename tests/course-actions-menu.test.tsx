@@ -25,6 +25,8 @@ const course: CourseIdentity = {
   timeZone: "America/New_York",
   color: "ocean",
   status: "active",
+  institution: null,
+  publication: null,
 };
 
 describe("CourseActionsMenu", () => {
@@ -81,6 +83,7 @@ describe("CourseActionsMenu", () => {
       timeZone: "America/New_York",
       colorKey: "gold",
       status: "active",
+      institutionId: null,
     });
     expect(navigationMocks.refresh).toHaveBeenCalledOnce();
   });

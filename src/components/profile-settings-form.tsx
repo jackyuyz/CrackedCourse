@@ -6,27 +6,38 @@ import { Check, LoaderCircle, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InstitutionCombobox } from "@/components/institution-combobox";
 import { Label } from "@/components/ui/label";
+import type { InstitutionOption } from "@/lib/institutions";
 
 export function ProfileSettingsForm({
   displayName,
   email,
   primaryTimeZone,
+  defaultInstitution = null,
   readOnly = false,
 }: {
   displayName: string;
   email: string;
   primaryTimeZone: string;
+  defaultInstitution?: InstitutionOption | null;
   readOnly?: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(displayName);
   const [savedName, setSavedName] = useState(displayName);
+  const [institution, setInstitution] =
+    useState<InstitutionOption | null>(defaultInstitution);
+  const [savedInstitutionId, setSavedInstitutionId] = useState(
+    defaultInstitution?.id ?? null,
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const trimmedName = name.trim();
-  const changed = trimmedName !== savedName;
+  const changed =
+    trimmedName !== savedName ||
+    (institution?.id ?? null) !== savedInstitutionId;
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,7 +50,10 @@ export function ProfileSettingsForm({
       const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: trimmedName }),
+        body: JSON.stringify({
+          displayName: trimmedName,
+          defaultInstitutionId: institution?.id ?? null,
+        }),
       });
       const body = (await response.json().catch(() => null)) as {
         profile?: { displayName?: string };
@@ -54,7 +68,8 @@ export function ProfileSettingsForm({
       const nextSavedName = body?.profile?.displayName ?? trimmedName;
       setName(nextSavedName);
       setSavedName(nextSavedName);
-      setMessage("Display name saved everywhere.");
+      setSavedInstitutionId(institution?.id ?? null);
+      setMessage("Profile defaults saved everywhere.");
       router.refresh();
     } catch (caught) {
       setError(
@@ -100,6 +115,26 @@ export function ProfileSettingsForm({
         </p>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="default-institution">Default school</Label>
+        <div>
+          <InstitutionCombobox
+            inputId="default-institution"
+            value={institution}
+            onChange={(nextInstitution) => {
+              setInstitution(nextInstitution);
+              setMessage(null);
+              setError(null);
+            }}
+            disabled={readOnly || saving}
+          />
+        </div>
+        <p className="text-muted-foreground text-[10px] leading-5">
+          New courses use this school automatically. You can override it in
+          each course’s settings.
+        </p>
+      </div>
+
       <div className="border-border flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-5">
           {readOnly ? (
@@ -119,7 +154,7 @@ export function ProfileSettingsForm({
             </p>
           ) : (
             <p className="text-muted-foreground text-xs">
-              This name appears in your workspace and sidebar.
+              Your name and school are used as defaults for this workspace.
             </p>
           )}
         </div>

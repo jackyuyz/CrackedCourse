@@ -52,4 +52,17 @@ describe("WorkspaceNavigation", () => {
       "aria-current",
     );
   });
+
+  it("keeps Community selected on publication detail pages", () => {
+    navigation.pathname = "/community/publication-id";
+    render(<WorkspaceNavigation />);
+
+    expect(screen.getByRole("link", { name: "Community" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
 });
