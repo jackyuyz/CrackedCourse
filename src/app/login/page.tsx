@@ -33,7 +33,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const redirectTo = safeAuthRedirect(query.next ?? null);
 
   return (
-    <main className="editorial-grid min-h-screen overflow-hidden">
+    <main className="editorial-grid min-h-screen overflow-x-hidden">
       <header className="mx-auto flex h-20 max-w-[1080px] items-center justify-between px-5 sm:px-8">
         <Link
           href="/"

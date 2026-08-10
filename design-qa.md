@@ -2,51 +2,50 @@
 
 ## Scope
 
-- Community course discovery search-row alignment.
-- Settings default-school autocomplete visibility and usable result height.
+- Add the existing U.S./Canada school selector to the Create account flow.
+- Preserve the established login-page visual system while accommodating the additional required field and its dropdown.
 
-## Visual truth
+## Visual truth and captures
 
-- Community reference: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_Yf0gwI/截屏2026-08-09 21.40.44.png` (1103 × 241 px).
-- Settings reference: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_pVu8Wu/截屏2026-08-09 21.43.16.png` (700 × 220 px).
-- Community implementation capture: `output/design-qa/community-search-after.png` (2326 × 1125 px).
-- Settings implementation capture: `output/design-qa/settings-school-dropdown-after.png` (2326 × 1125 px).
-- Browser viewport: 2327 × 1125 CSS px at device-pixel ratio 1.1.
+- Source: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_d8GEu8/截屏2026-08-09 22.08.26.png` (1919 × 947 px).
+- Implementation: `output/design-qa/signup-school-selector-after.png` (1265 × 712 px).
+- Open-dropdown implementation: `output/design-qa/signup-school-dropdown-after.png` (1265 × 712 px).
+- Focused source card: `output/design-qa/signup-reference-card-focused.png` (500 × 540 px).
+- Focused implementation card: `output/design-qa/signup-school-selector-focused.png` (450 × 612 px).
+- Browser CSS viewport: 1280 × 720 at device-pixel ratio 1. The in-app browser capped the requested 1920 × 947 viewport, so the full views were compared at the same desktop breakpoint and the auth cards were additionally compared as focused native-resolution regions.
 
-## Verified states
+## State and interaction coverage
 
-- Community: signed-in discovery page, Carnegie Mellon University selected, course query and year empty.
-- Settings: signed-in Profile page, Default school query set to `university`, result list open.
+- Route: `/login`, unauthenticated, Create account mode.
+- Empty school state displays a directory-search combobox between email and password.
+- Query `Carnegie` returned one visible option: Carnegie Mellon University, Pittsburgh, PA, US.
+- Selecting the option closed the list, populated the school name, and displayed the school location.
+- Page remained vertically scrollable at the shorter verification viewport; no horizontal overflow was introduced.
+- Browser console errors and warnings: none.
+- Account creation itself was not submitted during browser QA to avoid creating a test user. Submission behavior and validation are covered by automated tests.
 
-## Comparison history
+## Full-view and focused comparison
 
-### Pass 1 findings
+- The original two-column composition, editorial grid, hero typography, authentication tabs, card width, field styling, and primary CTA were retained.
+- The new School field follows the same label, input height, icon, border, radius, spacing, and helper-copy language used by the existing authentication form and Settings school picker.
+- The taller card is an intentional consequence of the requested field. At 1280 × 720, the page scrolls instead of clipping the CTA or helper text; at the larger source viewport, the card fits within the available page height.
+- The open dropdown uses the established popover, active-school iconography, location sublabel, and elevation treatment. It overlays following fields without reflow and remains inside the card width.
 
-- P1: The community search icon was vertically shifted because the institution field's location helper text stretched the grid row while sibling controls remained vertically centered against that taller row.
-- P1: The settings autocomplete was clipped at the Profile card boundary because the shared Card component uses hidden overflow.
-- P2: The school result list exposed too few rows for a broad query.
+## Findings and comparison history
 
-### Fixes
+### Pass 1
 
-- Aligned community filter controls to the start of the grid row so all input shells share the same vertical origin.
-- Allowed visible overflow on the Settings Profile card so the autocomplete can extend beyond the card without changing the card layout.
-- Increased the autocomplete's scrollable maximum height from 18rem to 20rem.
+- No actionable P0, P1, or P2 fidelity issues were found.
+- Expected difference: the Create account card is taller and includes the requested School field.
+- P3: The verification browser renders the focused capture slightly softer than the source screenshot; this is capture-density variance, not a CSS or asset change.
 
-### Post-fix evidence
+## Required fidelity surfaces
 
-- Community search icon center Y: 222.670453 px.
-- Community input center Y: 222.670450 px.
-- Alignment delta: less than 0.001 px.
-- Settings listbox height: 320 px with 12 options rendered for `university`.
-- The list extends 209.1 px beyond the Profile card and remains independently scrollable (`overflow-y: auto`).
-
-## Fidelity surface review
-
-- Typography: unchanged; existing product type scale and weights retained.
-- Spacing and alignment: corrected only at the affected controls.
-- Color, borders, radius, and shadows: existing design tokens retained.
-- Icons: existing Lucide icons retained; no replacement assets required.
-- Copy and interaction behavior: unchanged except for the taller visible result area.
-- Responsive behavior: grid alignment applies at every breakpoint; dropdown remains constrained to its combobox width and viewport-scrollable through its own list.
+- Fonts and typography: existing Geist-based hierarchy, weights, sizes, and line heights retained.
+- Spacing and layout rhythm: original card and field rhythm retained; one field group added with the same 1rem form gap.
+- Colors and visual tokens: existing navy, ocean, muted, border, focus-ring, radius, and shadow tokens retained.
+- Image and asset quality: no new raster assets required; the existing Lucide School icon is reused consistently with Settings.
+- Copy and content: concise English label and helper copy explain that the selection becomes the new-course default and remains editable later.
+- Accessibility: School has an associated label, combobox semantics, `aria-required`, expanded/listbox state, and keyboard-focusable options.
 
 final result: passed

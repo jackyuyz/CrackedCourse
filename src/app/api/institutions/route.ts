@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { errorResponse } from "@/lib/api/errors";
-import { getApiSession } from "@/lib/auth/api";
+import { hasSupabaseEnv } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
 
 const searchSchema = z.object({
   q: z.string().trim().min(2).max(80),
@@ -12,9 +13,12 @@ function escapeLikePattern(value: string) {
 }
 
 export async function GET(request: Request) {
-  const session = await getApiSession();
-  if (!session) {
-    return errorResponse("UNAUTHORIZED", "Sign in to search schools.", 401);
+  if (!hasSupabaseEnv()) {
+    return errorResponse(
+      "SUPABASE_NOT_CONFIGURED",
+      "School search is not configured yet.",
+      503,
+    );
   }
 
   const url = new URL(request.url);
@@ -26,12 +30,11 @@ export async function GET(request: Request) {
     );
   }
 
+  const supabase = await createClient();
   const query = escapeLikePattern(parsed.data.q.toLocaleLowerCase("en-US"));
-  const { data, error } = await session.supabase
+  const { data, error } = await supabase
     .from("institutions")
-    .select(
-      "id,canonical_name,city,region_code,country_code,default_time_zone",
-    )
+    .select("id,canonical_name,city,region_code,country_code,default_time_zone")
     .eq("is_active", true)
     .ilike("search_text", `%${query}%`)
     .order("canonical_name")
@@ -56,6 +59,10 @@ export async function GET(request: Request) {
         timeZone: institution.default_time_zone,
       })),
     },
-    { headers: { "Cache-Control": "private, no-store" } },
+    {
+      headers: {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+      },
+    },
   );
 }

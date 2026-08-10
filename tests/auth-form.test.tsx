@@ -24,6 +24,26 @@ vi.mock("next/navigation", () => ({
 describe("AuthForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            institutions: [
+              {
+                id: "00000000-0000-4000-8000-000000000100",
+                name: "Carnegie Mellon University",
+                city: "Pittsburgh",
+                region: "PA",
+                country: "US",
+                timeZone: "America/New_York",
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
     authMocks.signInWithPassword.mockResolvedValue({
       data: { session: { access_token: "test-token" } },
       error: null,
@@ -64,6 +84,12 @@ describe("AuthForm", () => {
       screen.getAllByRole("button", { name: /create account/i })[0],
     );
     await user.type(screen.getByLabelText(/email/i), "new@example.edu");
+    await user.type(screen.getByLabelText(/^school$/i), "Carnegie");
+    await user.click(
+      await screen.findByRole("option", {
+        name: /Carnegie Mellon University/i,
+      }),
+    );
     await user.type(screen.getByLabelText(/^password$/i), "strong-pass-123");
     await user.type(
       screen.getByLabelText(/confirm password/i),
@@ -80,12 +106,38 @@ describe("AuthForm", () => {
         options: {
           emailRedirectTo:
             "http://localhost:3000/auth/callback?next=%2Fcourses%2Fnew",
+          data: {
+            default_institution_id: "00000000-0000-4000-8000-000000000100",
+          },
         },
       });
     });
     expect(
       await screen.findByText(/We sent a one-time confirmation link/i),
     ).toBeVisible();
+  });
+
+  it("requires a directory school when creating an account", async () => {
+    const user = userEvent.setup();
+    render(<AuthForm configured demoEnabled={false} />);
+
+    await user.click(
+      screen.getAllByRole("button", { name: /create account/i })[0],
+    );
+    await user.type(screen.getByLabelText(/email/i), "new@example.edu");
+    await user.type(screen.getByLabelText(/^password$/i), "strong-pass-123");
+    await user.type(
+      screen.getByLabelText(/confirm password/i),
+      "strong-pass-123",
+    );
+    await user.click(
+      screen.getAllByRole("button", { name: /create account/i })[1],
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Choose your school from the U.S. or Canadian directory",
+    );
+    expect(authMocks.signUp).not.toHaveBeenCalled();
   });
 
   it("does not register when the password confirmation differs", async () => {

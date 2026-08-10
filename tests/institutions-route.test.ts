@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  getApiSession: vi.fn(),
+  hasSupabaseEnv: vi.fn(),
+  createClient: vi.fn(),
+  from: vi.fn(),
   select: vi.fn(),
   eq: vi.fn(),
   ilike: vi.fn(),
@@ -9,7 +11,10 @@ const mocks = vi.hoisted(() => ({
   limit: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/api", () => ({ getApiSession: mocks.getApiSession }));
+vi.mock("@/lib/env", () => ({ hasSupabaseEnv: mocks.hasSupabaseEnv }));
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: mocks.createClient,
+}));
 
 import { GET } from "@/app/api/institutions/route";
 
@@ -40,29 +45,27 @@ describe("GET /api/institutions", () => {
       ],
       error: null,
     });
-    mocks.getApiSession.mockResolvedValue({
-      userId: "user-id",
-      supabase: {
-        from: vi.fn(() => builder),
-      },
-    });
+    mocks.hasSupabaseEnv.mockReturnValue(true);
+    mocks.from.mockReturnValue(builder);
+    mocks.createClient.mockResolvedValue({ from: mocks.from });
   });
 
-  it("requires authentication", async () => {
-    mocks.getApiSession.mockResolvedValue(null);
+  it("reports when school search is not configured", async () => {
+    mocks.hasSupabaseEnv.mockReturnValue(false);
     const response = await GET(
       new Request("http://localhost/api/institutions?q=Toronto"),
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(503);
   });
 
-  it("returns only mapped North American directory fields", async () => {
+  it("returns public directory fields before sign-in", async () => {
     const response = await GET(
       new Request("http://localhost/api/institutions?q=Toronto"),
     );
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(mocks.createClient).toHaveBeenCalledOnce();
     expect(mocks.eq).toHaveBeenCalledWith("is_active", true);
     expect(mocks.limit).toHaveBeenCalledWith(12);
     expect(body.institutions).toEqual([
@@ -75,5 +78,11 @@ describe("GET /api/institutions", () => {
         timeZone: "America/Toronto",
       },
     ]);
+  });
+
+  it("searches the shared directory by normalized name and alias text", async () => {
+    await GET(new Request("http://localhost/api/institutions?q=Virginia"));
+
+    expect(mocks.ilike).toHaveBeenCalledWith("search_text", "%virginia%");
   });
 });

@@ -16,8 +16,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InstitutionCombobox } from "@/components/institution-combobox";
 import { Label } from "@/components/ui/label";
 import { passwordAuthErrorMessage } from "@/lib/auth/messages";
+import type { InstitutionOption } from "@/lib/institutions";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "signIn" | "signUp" | "recovery";
@@ -41,6 +43,9 @@ export function AuthForm({
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
+  const [institution, setInstitution] = useState<InstitutionOption | null>(
+    null,
+  );
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [status, setStatus] = useState<AuthStatus>("idle");
@@ -59,8 +64,13 @@ export function AuthForm({
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!configured) return;
+    const signupInstitutionId = institution?.id;
     if (mode === "signUp" && password !== passwordConfirmation) {
       setFormError("Passwords do not match.");
+      return;
+    }
+    if (mode === "signUp" && !signupInstitutionId) {
+      setFormError("Choose your school from the U.S. or Canadian directory.");
       return;
     }
 
@@ -96,7 +106,10 @@ export function AuthForm({
         const { data, error: authError } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { emailRedirectTo: callbackUrl.toString() },
+          options: {
+            emailRedirectTo: callbackUrl.toString(),
+            data: { default_institution_id: signupInstitutionId },
+          },
         });
 
         if (authError) {
@@ -148,7 +161,7 @@ export function AuthForm({
           : "Sign in to your workspace";
 
   return (
-    <Card className="border-navy/10 bg-white shadow-[0_18px_55px_rgba(2,48,71,0.1)]">
+    <Card className="border-navy/10 overflow-visible bg-white shadow-[0_18px_55px_rgba(2,48,71,0.1)]">
       <CardHeader className="pb-2">
         <CardTitle className="text-navy text-xl font-extrabold tracking-[-0.03em]">
           {title}
@@ -256,6 +269,27 @@ export function AuthForm({
                   />
                 </div>
               </div>
+
+              {mode === "signUp" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="signup-institution">School</Label>
+                  <InstitutionCombobox
+                    inputId="signup-institution"
+                    value={institution}
+                    onChange={(nextInstitution) => {
+                      setInstitution(nextInstitution);
+                      setFormError(null);
+                    }}
+                    disabled={!configured || status === "submitting"}
+                    required
+                    inputClassName="h-11"
+                  />
+                  <p className="text-muted-foreground text-[11px] leading-5">
+                    Used as the default for new courses. You can change it later
+                    in Settings.
+                  </p>
+                </div>
+              ) : null}
 
               {mode !== "recovery" ? (
                 <div className="space-y-2">

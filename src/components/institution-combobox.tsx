@@ -14,13 +14,17 @@ export function InstitutionCombobox({
   onChange,
   inputId,
   disabled = false,
+  required = false,
   placeholder = "Search a U.S. or Canadian school",
+  inputClassName,
 }: {
   value: InstitutionOption | null;
   onChange: (institution: InstitutionOption | null) => void;
   inputId?: string;
   disabled?: boolean;
+  required?: boolean;
   placeholder?: string;
+  inputClassName?: string;
 }) {
   const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,6 +83,7 @@ export function InstitutionCombobox({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
+          aria-required={required}
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
@@ -89,7 +94,7 @@ export function InstitutionCombobox({
           disabled={disabled}
           placeholder={placeholder}
           autoComplete="off"
-          className="pr-20 pl-9"
+          className={cn("pr-20 pl-9", inputClassName)}
         />
         <div className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center">
           {value ? (
