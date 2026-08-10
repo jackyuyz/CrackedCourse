@@ -305,7 +305,7 @@ Requirement IDs are stable references for implementation tasks and tests.
 - **PPL-003:** Office hours may be one-time or recurring and may include location or meeting URL.
 - **PPL-004:** Recurring office hours require day of week, local start time, optional end time, recurrence start/end dates, and course time zone.
 - **PPL-005:** If recurrence boundaries are missing, the review UI requests term dates or allows the student to save the office hour as informational text without calendar recurrence.
-- **PPL-006:** P0 may provide a Rate My Professors search link built from the confirmed instructor name and institution. It must not scrape, proxy, reproduce, or persist third-party ratings.
+- **PPL-006:** The course Overview may provide a Rate My Professors profile or search link for confirmed instructors only, never teaching assistants. The UI must label the destination as external, state that student-submitted information is for reference only, and provide a clear no-linked-profile or missing-school state. It must not scrape, proxy, reproduce, or persist third-party ratings.
 
 ### 8.7 Calendar and events
 

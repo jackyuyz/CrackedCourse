@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { PolicyNotes } from "@/components/policy-notes";
+import { InstructorExternalReference } from "@/components/instructor-external-reference";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,6 +144,13 @@ export default async function CoursePage({ params }: PageProps) {
                         </p>
                       ) : null}
                     </div>
+                    {person.isInstructor ? (
+                      <InstructorExternalReference
+                        instructorName={person.name}
+                        institutionName={data.institutionName}
+                        externalProfileUrl={person.externalProfileUrl}
+                      />
+                    ) : null}
                   </CardContent>
                 </Card>
               ))

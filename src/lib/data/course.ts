@@ -14,13 +14,16 @@ import type { InstitutionOption } from "@/lib/institutions";
 export interface CoursePerson {
   name: string;
   role: string;
+  isInstructor: boolean;
   email: string | null;
   office: string | null;
   officeHours: string | null;
+  externalProfileUrl: string | null;
 }
 
 export interface CourseOverviewData {
   course: AppCourse;
+  institutionName: string | null;
   nextEvents: AppEvent[];
   people: CoursePerson[];
   gradingCategories: Array<{ name: string; weightPercent: number }>;
@@ -143,7 +146,12 @@ export async function getCourseOverview(
       nextEvents: demoEvents
         .filter((event) => event.courseId === course.id)
         .slice(0, 3),
-      people: demoPeople,
+      institutionName: "Carnegie Mellon University",
+      people: demoPeople.map((person) => ({
+        ...person,
+        isInstructor: person.role === "Instructor",
+        externalProfileUrl: null,
+      })),
       gradingCategories: [
         { name: "Written homework", weightPercent: 20 },
         { name: "Programming assignments", weightPercent: 35 },
@@ -166,7 +174,7 @@ export async function getCourseOverview(
   const { data: row } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,time_zone,color_key,status,course_people(name,role,email,office_location,office_hours(recurrence_text)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id),grading_categories(name,weight_percent,display_order),grading_policies(description,calculator_support),syllabus_sources(original_name,created_at,processing_status,page_count)",
+      "id,code,title,section,term_name,time_zone,color_key,status,institutions:institution_id(canonical_name),course_people(name,role,email,office_location,external_profile_url,office_hours(recurrence_text)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id),grading_categories(name,weight_percent,display_order),grading_policies(description,calculator_support),syllabus_sources(original_name,created_at,processing_status,page_count)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -240,6 +248,7 @@ export async function getCourseOverview(
 
   const people: CoursePerson[] = (row.course_people ?? []).map((person) => ({
     name: person.name,
+    isInstructor: person.role === "instructor",
     role:
       person.role === "teaching_assistant"
         ? "Teaching assistant"
@@ -249,11 +258,17 @@ export async function getCourseOverview(
     email: person.email,
     office: person.office_location,
     officeHours: person.office_hours?.[0]?.recurrence_text ?? null,
+    externalProfileUrl: person.external_profile_url,
   }));
+
+  const institution = Array.isArray(row.institutions)
+    ? row.institutions[0]
+    : row.institutions;
 
   const source = row.syllabus_sources?.at(-1);
   return {
     course,
+    institutionName: institution?.canonical_name ?? null,
     nextEvents,
     people,
     gradingCategories: (row.grading_categories ?? [])
