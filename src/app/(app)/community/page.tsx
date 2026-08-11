@@ -72,9 +72,13 @@ export default async function CommunityPage({
       {publications.length > 0 ? (
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {publications.map((publication) => (
-            <Link key={publication.id} href={`/community/${publication.id}`}>
+            <Link
+              key={publication.id}
+              href={`/community/${publication.id}`}
+              className="block h-full"
+            >
               <Card className="hover:border-ocean/35 h-full gap-0 py-0 transition-colors">
-                <CardContent className="p-5">
+                <CardContent className="flex h-full flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
                     <Badge className="bg-ocean/10 text-ocean border-0 font-mono text-[10px] shadow-none">
                       {publication.courseCode}
@@ -87,11 +91,11 @@ export default async function CommunityPage({
                   <h3 className="text-navy mt-4 text-base font-extrabold tracking-[-0.02em]">
                     {publication.courseTitle}
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-xs">
+                  <p className="text-muted-foreground mt-2 pb-5 text-xs">
                     {publication.termName ?? "Term not specified"} · Shared by{" "}
                     {publication.contributorName}
                   </p>
-                  <div className="border-border text-muted-foreground mt-5 flex items-center justify-between border-t pt-4 text-[10px]">
+                  <div className="border-border text-muted-foreground mt-auto flex items-center justify-between border-t pt-5 text-[10px]">
                     <span className="flex items-center gap-1.5">
                       <FileText className="size-3.5" />
                       {publication.pageCount ?? "—"} page PDF
