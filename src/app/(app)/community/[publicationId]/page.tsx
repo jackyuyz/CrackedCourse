@@ -5,6 +5,7 @@ import {
   BookOpenCheck,
   Download,
   FileText,
+  Mail,
   School,
   ShieldCheck,
   ThumbsUp,
@@ -118,6 +119,14 @@ export default async function CommunityPublicationPage({
                     <p className="text-ocean mt-1 text-[10px] font-semibold capitalize">
                       {person.role.replaceAll("_", " ")}
                     </p>
+                    {person.email ? (
+                      <a
+                        href={`mailto:${person.email}`}
+                        className="text-muted-foreground hover:text-ocean mt-3 flex items-center gap-1.5 text-xs transition-colors"
+                      >
+                        <Mail className="size-3.5" /> {person.email}
+                      </a>
+                    ) : null}
                   </div>
                 ))
               ) : (

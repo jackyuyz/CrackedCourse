@@ -44,6 +44,7 @@ export async function getCalendarData(
       "id,course_id,title,event_type,start_date,starts_at,is_all_day,time_zone,location,source_item_id,courses(code,title,color_key)",
     )
     .eq("owner_id", viewer.id)
+    .eq("is_hidden", false)
     .eq("status", "confirmed");
   if (courseId) eventQuery = eventQuery.eq("course_id", courseId);
 

@@ -1,8 +1,8 @@
 # CrackedCourse Product & Engineering Specification
 
 - **Document status:** Implementation-ready product specification
-- **Version:** 1.0
-- **Last updated:** 2026-08-05
+- **Version:** 1.1
+- **Last updated:** 2026-08-10
 - **Product:** CrackedCourse
 - **Repository name:** `cracked-course`
 
@@ -74,7 +74,53 @@ Instrumentation should support these metrics, even if a full analytics dashboard
 - percentage of published courses with at least one grade entered;
 - user-reported trust in extracted data after source review.
 
-### 3.3 Non-goals for MVP
+### 3.3 Manual course editing and provenance
+
+Every course fact has a provenance. A syllabus is evidence, not an immutable
+source of truth: the course owner must be able to correct extracted data and
+add information that the syllabus does not contain.
+
+The product stores three distinct layers:
+
+1. **Source evidence.** The original PDF, page text, extraction run, original
+   extracted value, confidence, and quoted page evidence are preserved and are
+   never overwritten by an edit.
+2. **Course workspace data.** Course identity, people, office hours, calendar
+   events, grading categories, grading policies, and assessments are the
+   editable records that power the student workspace and published snapshot.
+   Each record declares whether it came from the syllabus, was added manually,
+   or was imported from a community publication.
+3. **Personal learning data.** Scores, targets, earned/max points, and private
+   notes belong only to the course owner. They are never included in a community
+   publication or exposed to a viewer of a shared course.
+
+#### P0 editing requirements
+
+- The course owner can add, edit, and hide course people, office hours,
+  calendar events, grading categories, policies, and assessments.
+- Existing records preserve their source link. A manual edit must not erase the
+  underlying PDF evidence.
+- Removing a syllabus-derived record hides it from the workspace rather than
+  deleting its extraction evidence. A future re-parse must not silently restore
+  a record the owner intentionally hid.
+- The editor labels each record as **From syllabus**, **Added manually**, or
+  **Imported from community**.
+- The public snapshot contains course structure only: no student scores,
+  assessment points, private notes, meeting URLs, or non-instructor staff
+  contact details. An instructor email recorded for the course may be shared
+  so community members can contact the course instructor.
+- Publishing remains an explicit owner action. Editing a private workspace does
+  not silently change the currently published snapshot.
+
+#### Deferred requirements
+
+- Uploading a replacement syllabus produces a new extraction run and a
+  side-by-side conflict-resolution view; it never overwrites manual edits.
+- Collaborators may submit edits only through role-based permissions and an
+  audit trail. Community viewers submit suggestions rather than directly
+  modifying a contributor's workspace.
+
+### 3.4 Non-goals for MVP
 
 The following must not be implemented unless separately approved:
 

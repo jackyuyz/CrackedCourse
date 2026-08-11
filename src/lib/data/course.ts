@@ -174,7 +174,7 @@ export async function getCourseOverview(
   const { data: row } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,time_zone,color_key,status,institutions:institution_id(canonical_name),course_people(name,role,email,office_location,external_profile_url,office_hours(recurrence_text)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id),grading_categories(name,weight_percent,display_order),grading_policies(description,calculator_support),syllabus_sources(original_name,created_at,processing_status,page_count)",
+      "id,code,title,section,term_name,time_zone,color_key,status,institutions:institution_id(canonical_name),course_people(name,role,email,office_location,external_profile_url,is_hidden,office_hours(recurrence_text,is_hidden)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id,is_hidden),grading_categories(name,weight_percent,display_order,is_hidden),grading_policies(description,calculator_support,is_hidden),syllabus_sources(original_name,created_at,processing_status,page_count)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -199,6 +199,7 @@ export async function getCourseOverview(
 
   const now = new Date();
   const nextEvents = (row.calendar_events ?? [])
+    .filter((event) => !event.is_hidden)
     .map((event) => {
       const date = new Date(event.starts_at ?? `${event.start_date}T12:00:00`);
       return {
@@ -246,7 +247,9 @@ export async function getCourseOverview(
       sourcePage: event.sourcePage,
     }));
 
-  const people: CoursePerson[] = (row.course_people ?? []).map((person) => ({
+  const people: CoursePerson[] = (row.course_people ?? [])
+    .filter((person) => !person.is_hidden)
+    .map((person) => ({
     name: person.name,
     isInstructor: person.role === "instructor",
     role:
@@ -257,9 +260,11 @@ export async function getCourseOverview(
           : "Course staff",
     email: person.email,
     office: person.office_location,
-    officeHours: person.office_hours?.[0]?.recurrence_text ?? null,
+    officeHours:
+      person.office_hours?.find((officeHour) => !officeHour.is_hidden)
+        ?.recurrence_text ?? null,
     externalProfileUrl: person.external_profile_url,
-  }));
+    }));
 
   const institution = Array.isArray(row.institutions)
     ? row.institutions[0]
@@ -272,12 +277,14 @@ export async function getCourseOverview(
     nextEvents,
     people,
     gradingCategories: (row.grading_categories ?? [])
+      .filter((category) => !category.is_hidden)
       .sort((a, b) => a.display_order - b.display_order)
       .map((category) => ({
         name: category.name,
         weightPercent: Number(category.weight_percent),
       })),
     policyWarnings: (row.grading_policies ?? [])
+      .filter((policy) => !policy.is_hidden)
       .filter((policy) => policy.calculator_support === "unsupported")
       .map((policy) => policy.description),
     source: source

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
+  PencilLine,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
@@ -505,6 +506,12 @@ export function CourseActionsMenu({
           <DropdownMenuItem onSelect={openSettings}>
             <Settings2 />
             Course settings
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild disabled={readOnly}>
+            <Link href={`/courses/${course.id}/edit`}>
+              <PencilLine />
+              Edit course data
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={`/courses/${course.id}/calendar`}>

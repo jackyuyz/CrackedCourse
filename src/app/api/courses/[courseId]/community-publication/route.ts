@@ -29,6 +29,12 @@ function deriveTerm(termName: string | null, termStart: string | null) {
   };
 }
 
+function publicInstructorEmail(value: unknown) {
+  if (typeof value !== "string") return null;
+  const email = value.trim();
+  return email && email.length <= 254 ? email : null;
+}
+
 export async function POST(request: Request, { params }: RouteContext) {
   const session = await getApiSession();
   if (!session) {
@@ -50,7 +56,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { data: course, error: courseError } = await session.supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,term_start,term_end,time_zone,status,institution_id,calendar_events(title,event_type,starts_at,ends_at,start_date,end_date,is_all_day,time_zone,location,rrule,status),grading_categories(name,weight_percent,aggregation_mode,is_complete,display_order),grading_policies(kind,description,calculator_support),course_people(name,role),syllabus_sources(storage_path,original_name,mime_type,sha256,size_bytes,page_count,processing_status,created_at)",
+      "id,code,title,section,term_name,term_start,term_end,time_zone,status,institution_id,calendar_events(title,event_type,starts_at,ends_at,start_date,end_date,is_all_day,time_zone,location,rrule,status,is_hidden),grading_categories(name,weight_percent,aggregation_mode,is_complete,display_order,is_hidden),grading_policies(kind,description,calculator_support,is_hidden),course_people(name,role,email,is_hidden),syllabus_sources(storage_path,original_name,mime_type,sha256,size_bytes,page_count,processing_status,created_at)",
     )
     .eq("id", courseId)
     .eq("owner_id", session.userId)
@@ -143,10 +149,28 @@ export async function POST(request: Request, { params }: RouteContext) {
     term_end: course.term_end,
     time_zone: course.time_zone,
     contributor_display_name: profile?.display_name?.trim() || "Student",
-    calendar_events: course.calendar_events ?? [],
-    grading_categories: course.grading_categories ?? [],
-    grading_policies: course.grading_policies ?? [],
-    course_people: course.course_people ?? [],
+    calendar_events: (course.calendar_events ?? []).flatMap(
+      ({ is_hidden, ...event }) => (is_hidden ? [] : [event]),
+    ),
+    grading_categories: (course.grading_categories ?? []).flatMap(
+      ({ is_hidden, ...category }) => (is_hidden ? [] : [category]),
+    ),
+    grading_policies: (course.grading_policies ?? []).flatMap(
+      ({ is_hidden, ...policy }) => (is_hidden ? [] : [policy]),
+    ),
+    course_people: (course.course_people ?? []).flatMap(
+      ({ is_hidden, email, ...person }) => {
+        if (is_hidden) return [];
+        const instructorEmail =
+          person.role === "instructor" ? publicInstructorEmail(email) : null;
+        return [
+          {
+            ...person,
+            ...(instructorEmail ? { email: instructorEmail } : {}),
+          },
+        ];
+      },
+    ),
     source_storage_path: source.storage_path,
     source_original_name: source.original_name,
     source_mime_type: source.mime_type,

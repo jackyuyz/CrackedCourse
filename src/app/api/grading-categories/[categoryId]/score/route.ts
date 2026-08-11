@@ -32,6 +32,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     .update({ student_score_percent: parsed.data.scorePercent })
     .eq("id", categoryId)
     .eq("owner_id", session.userId)
+    .eq("is_hidden", false)
     .select("id,student_score_percent")
     .maybeSingle();
 

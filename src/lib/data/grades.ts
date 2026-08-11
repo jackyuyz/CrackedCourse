@@ -63,7 +63,7 @@ export async function getGradeWorkspace(
   const { data: course } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,color_key,status,grading_categories(id,name,weight_percent,student_score_percent,display_order),grading_policies(description,calculator_support)",
+      "id,code,title,section,term_name,color_key,status,grading_categories(id,name,weight_percent,student_score_percent,display_order,is_hidden),grading_policies(description,calculator_support,is_hidden)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -81,6 +81,7 @@ export async function getGradeWorkspace(
       status: course.status,
     },
     categories: (course.grading_categories ?? [])
+      .filter((category) => !category.is_hidden)
       .sort((a, b) => a.display_order - b.display_order)
       .map((category) => ({
         id: category.id,
@@ -92,6 +93,7 @@ export async function getGradeWorkspace(
             : Number(category.student_score_percent),
       })),
     policyWarnings: (course.grading_policies ?? [])
+      .filter((policy) => !policy.is_hidden)
       .filter((policy) => policy.calculator_support === "unsupported")
       .map((policy) => policy.description),
   };

@@ -47,7 +47,7 @@ export interface CommunityPublicationDetail
     description: string;
     calculator_support: string;
   }>;
-  people: Array<{ name: string; role: string }>;
+  people: Array<{ name: string; role: string; email: string | null }>;
   endorsedByViewer: boolean;
 }
 
@@ -80,6 +80,24 @@ function safeSearch(value: string) {
     .trim()
     .slice(0, 80)
     .replace(/[^a-zA-Z0-9\s-]/g, "");
+}
+
+function publicPeople(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((person) => {
+    if (!person || typeof person !== "object") return [];
+    const record = person as Record<string, unknown>;
+    const name = typeof record.name === "string" ? record.name.trim() : "";
+    const role = typeof record.role === "string" ? record.role : "other";
+    if (!name) return [];
+
+    const email =
+      role === "instructor" && typeof record.email === "string"
+        ? record.email.trim().slice(0, 254) || null
+        : null;
+    return [{ name, role, email }];
+  });
 }
 
 export async function getCommunityPublications(
@@ -214,9 +232,7 @@ export async function getCommunityPublication(
     policies: Array.isArray(publication.grading_policies)
       ? publication.grading_policies
       : [],
-    people: Array.isArray(publication.course_people)
-      ? publication.course_people
-      : [],
+    people: publicPeople(publication.course_people),
     institution: mapInstitution(institution),
     endorsementCount: endorsementCount(publication.community_endorsements),
     endorsedByViewer: Boolean(endorsement),

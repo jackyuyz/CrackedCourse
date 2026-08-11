@@ -40,7 +40,18 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
       calendar_events: [],
       grading_categories: [],
       grading_policies: [],
-      course_people: [{ name: "Gordon Weinberg", role: "instructor" }],
+      course_people: [
+        {
+          name: "Gordon Weinberg",
+          role: "instructor",
+          email: "gordonw@andrew.cmu.edu",
+        },
+        {
+          name: "Teaching assistant",
+          role: "teaching_assistant",
+          email: "ta@example.edu",
+        },
+      ],
       syllabus_sources: [
         {
           storage_path: "owner/course/syllabus.pdf",
@@ -125,7 +136,7 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
     const selection = mocks.courseSelect.mock.calls[0][0] as string;
     expect(selection).not.toContain("notes");
     expect(selection).not.toContain("meeting_url");
-    expect(selection).not.toContain("email");
+    expect(selection).toContain("course_people(name,role,email,is_hidden)");
     expect(selection).not.toContain("assessments");
     expect(selection).not.toContain("student_score_percent");
     expect(mocks.publicationInsert).toHaveBeenCalledWith(
@@ -135,7 +146,14 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
         institution_id: "institution-id",
         normalized_course_code: "36202",
         snapshot_version: 1,
-        course_people: [{ name: "Gordon Weinberg", role: "instructor" }],
+        course_people: [
+          {
+            name: "Gordon Weinberg",
+            role: "instructor",
+            email: "gordonw@andrew.cmu.edu",
+          },
+          { name: "Teaching assistant", role: "teaching_assistant" },
+        ],
         publication_status: "published",
       }),
     );

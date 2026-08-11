@@ -148,6 +148,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
             location: event.location,
             rrule: event.rrule,
             status: event.status,
+            origin: "community_import",
           })),
         )
       : Promise.resolve({ error: null }),
@@ -161,6 +162,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
             aggregation_mode: category.aggregation_mode,
             is_complete: category.is_complete,
             display_order: category.display_order,
+            origin: "community_import",
           })),
         )
       : Promise.resolve({ error: null }),
@@ -172,6 +174,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
             kind: policy.kind,
             description: policy.description,
             calculator_support: policy.calculator_support,
+            origin: "community_import",
           })),
         )
       : Promise.resolve({ error: null }),
@@ -182,6 +185,11 @@ export async function POST(_request: Request, { params }: RouteContext) {
             owner_id: session.userId,
             name: person.name,
             role: person.role,
+            email:
+              person.role === "instructor" && typeof person.email === "string"
+                ? person.email.trim() || null
+                : null,
+            origin: "community_import",
           })),
         )
       : Promise.resolve({ error: null }),
