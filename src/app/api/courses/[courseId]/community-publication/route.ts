@@ -53,14 +53,27 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const { courseId } = await params;
-  const { data: course, error: courseError } = await session.supabase
-    .from("courses")
-    .select(
-      "id,code,title,section,term_name,term_start,term_end,time_zone,status,institution_id,calendar_events(title,event_type,starts_at,ends_at,start_date,end_date,is_all_day,time_zone,location,rrule,status,is_hidden),grading_categories(name,weight_percent,aggregation_mode,is_complete,display_order,is_hidden),grading_policies(kind,description,calculator_support,is_hidden),course_people(name,role,email,is_hidden),syllabus_sources(storage_path,original_name,mime_type,sha256,size_bytes,page_count,processing_status,created_at)",
-    )
-    .eq("id", courseId)
-    .eq("owner_id", session.userId)
-    .maybeSingle();
+  const [courseResult, publicUnitsResult] = await Promise.all([
+    session.supabase
+      .from("courses")
+      .select(
+        "id,code,title,section,term_name,term_start,term_end,time_zone,status,institution_id,calendar_events(title,event_type,starts_at,ends_at,start_date,end_date,is_all_day,time_zone,location,rrule,status,is_hidden),grading_categories(name,weight_percent,aggregation_mode,is_complete,display_order,is_hidden),grading_policies(kind,description,calculator_support,is_hidden),course_people(name,role,email,is_hidden),syllabus_sources(storage_path,original_name,mime_type,sha256,size_bytes,page_count,processing_status,created_at)",
+      )
+      .eq("id", courseId)
+      .eq("owner_id", session.userId)
+      .maybeSingle(),
+    session.supabase
+      .from("learning_units")
+      .select(
+        "title,description,display_order,learning_unit_notes!inner(body_markdown,updated_at)",
+      )
+      .eq("course_id", courseId)
+      .eq("owner_id", session.userId)
+      .eq("is_hidden", false)
+      .eq("learning_unit_notes.visibility", "public")
+      .order("display_order"),
+  ]);
+  const { data: course, error: courseError } = courseResult;
 
   if (courseError) {
     return errorResponse(
@@ -70,6 +83,13 @@ export async function POST(request: Request, { params }: RouteContext) {
     );
   }
   if (!course) return errorResponse("NOT_FOUND", "Course not found.", 404);
+  if (publicUnitsResult.error) {
+    return errorResponse(
+      "LEARNING_UNITS_LOOKUP_FAILED",
+      "We couldn’t prepare your public course notes. Try again.",
+      500,
+    );
+  }
   if (course.status !== "active") {
     return errorResponse(
       "COURSE_NOT_READY",
@@ -134,6 +154,22 @@ export async function POST(request: Request, { params }: RouteContext) {
     );
   }
   const term = deriveTerm(course.term_name, course.term_start);
+  const learningUnits = (publicUnitsResult.data ?? []).flatMap((unit) => {
+    const note = Array.isArray(unit.learning_unit_notes)
+      ? unit.learning_unit_notes[0]
+      : unit.learning_unit_notes;
+    const noteMarkdown = note?.body_markdown?.trim();
+    if (!noteMarkdown || !note?.updated_at) return [];
+    return [
+      {
+        title: unit.title,
+        description: unit.description,
+        displayOrder: unit.display_order,
+        noteMarkdown,
+        noteUpdatedAt: note.updated_at,
+      },
+    ];
+  });
   const snapshot = {
     source_course_id: course.id,
     owner_id: session.userId,
@@ -171,6 +207,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         ];
       },
     ),
+    learning_units: learningUnits,
     source_storage_path: source.storage_path,
     source_original_name: source.original_name,
     source_mime_type: source.mime_type,

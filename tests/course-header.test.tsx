@@ -38,6 +38,6 @@ describe("CourseHeader", () => {
     expect(
       within(navigation).getByRole("link", { name: /Calendar/ }),
     ).toHaveClass("text-navy");
-    expect(within(navigation).getAllByRole("link")).toHaveLength(3);
+    expect(within(navigation).getAllByRole("link")).toHaveLength(4);
   });
 });

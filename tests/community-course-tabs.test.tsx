@@ -35,4 +35,31 @@ describe("CommunityCourseTabs", () => {
       "aria-current",
     );
   });
+
+  it("shows study notes only when the published snapshot has them", () => {
+    const { rerender } = render(
+      <CommunityCourseTabs
+        publicationId="publication-id"
+        activeTab="notes"
+        hasStudyNotes
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Study notes" })).toHaveAttribute(
+      "href",
+      "/community/publication-id?tab=notes",
+    );
+    expect(screen.getByRole("link", { name: "Study notes" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    rerender(
+      <CommunityCourseTabs
+        publicationId="publication-id"
+        activeTab="overview"
+        hasStudyNotes={false}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: "Study notes" })).toBeNull();
+  });
 });

@@ -887,9 +887,10 @@ export function CourseActionsMenu({
                 : "Publish this course?"}
             </DialogTitle>
             <DialogDescription>
-              Signed-in students can view the structured course information
-              and original syllabus PDF. Your private grades, notes, staff
-              contact details, and meeting links are never included.
+              Signed-in students can view the structured course information,
+              original syllabus PDF, and your public course notes. Private
+              grades, private notes, materials, staff contact details, and
+              meeting links are never included.
             </DialogDescription>
           </DialogHeader>
           {!course.institution ? (
@@ -906,8 +907,9 @@ export function CourseActionsMenu({
               className="accent-ocean mt-1 size-4 shrink-0"
             />
             <span>
-              I confirm that I have permission to share this syllabus and the
-              course information extracted from it.
+              I confirm that I have permission to share this syllabus, the
+              course information, and my public course notes. I will not share
+              personal information or material I do not have rights to share.
             </span>
           </label>
           {error ? (

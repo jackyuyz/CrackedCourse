@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getApiSession: vi.fn(),
   revalidatePath: vi.fn(),
   courseSelect: vi.fn(),
+  learningUnitsSelect: vi.fn(),
   publicationInsert: vi.fn(),
 }));
 
@@ -70,6 +71,31 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
       mocks.courseSelect(selection);
       return courseBuilder;
     });
+    const learningUnitsBuilder = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn().mockResolvedValue({
+        data: [
+          {
+            title: "Probability foundations",
+            description: "Definitions used throughout the course.",
+            display_order: 0,
+            learning_unit_notes: [
+              {
+                body_markdown: "Keep the sample space explicit.",
+                updated_at: "2026-08-10T00:00:00.000Z",
+              },
+            ],
+          },
+        ],
+        error: null,
+      }),
+    };
+    learningUnitsBuilder.select.mockImplementation((selection: string) => {
+      mocks.learningUnitsSelect(selection);
+      return learningUnitsBuilder;
+    });
+    learningUnitsBuilder.eq.mockReturnValue(learningUnitsBuilder);
     const profileBuilder = chainMaybeSingle({ display_name: "Jack" });
     const publicationLookupBuilder = chainMaybeSingle(null);
     const publicationWriteBuilder = {
@@ -91,6 +117,7 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
       supabase: {
         from: vi.fn((table: string) => {
           if (table === "courses") return courseBuilder;
+          if (table === "learning_units") return learningUnitsBuilder;
           if (table === "profiles") return profileBuilder;
           if (table === "community_publications") {
             return {
@@ -139,6 +166,9 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
     expect(selection).toContain("course_people(name,role,email,is_hidden)");
     expect(selection).not.toContain("assessments");
     expect(selection).not.toContain("student_score_percent");
+    expect(mocks.learningUnitsSelect).toHaveBeenCalledWith(
+      "title,description,display_order,learning_unit_notes!inner(body_markdown,updated_at)",
+    );
     expect(mocks.publicationInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         source_course_id: "course-id",
@@ -153,6 +183,15 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
             email: "gordonw@andrew.cmu.edu",
           },
           { name: "Teaching assistant", role: "teaching_assistant" },
+        ],
+        learning_units: [
+          {
+            title: "Probability foundations",
+            description: "Definitions used throughout the course.",
+            displayOrder: 0,
+            noteMarkdown: "Keep the sample space explicit.",
+            noteUpdatedAt: "2026-08-10T00:00:00.000Z",
+          },
         ],
         publication_status: "published",
       }),

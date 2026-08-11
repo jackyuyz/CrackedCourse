@@ -2,6 +2,10 @@ import "server-only";
 
 import type { Viewer } from "@/lib/auth/viewer";
 import type { InstitutionOption } from "@/lib/institutions";
+import {
+  parsePublishedLearningUnits,
+  type PublishedLearningUnit,
+} from "@/lib/learning-units";
 import { createClient } from "@/lib/supabase/server";
 
 export interface CommunityPublicationSummary {
@@ -48,6 +52,7 @@ export interface CommunityPublicationDetail
     calculator_support: string;
   }>;
   people: Array<{ name: string; role: string; email: string | null }>;
+  learningUnits: PublishedLearningUnit[];
   endorsedByViewer: boolean;
 }
 
@@ -187,7 +192,7 @@ export async function getCommunityPublication(
     supabase
       .from("community_publications")
       .select(
-        "id,owner_id,course_code,course_title,section,term_name,term_year,term_period,term_start,term_end,time_zone,contributor_display_name,updated_at,source_original_name,source_size_bytes,source_page_count,snapshot_version,calendar_events,grading_categories,grading_policies,course_people,institutions(id,canonical_name,city,region_code,country_code,default_time_zone),community_endorsements(count)",
+        "id,owner_id,course_code,course_title,section,term_name,term_year,term_period,term_start,term_end,time_zone,contributor_display_name,updated_at,source_original_name,source_size_bytes,source_page_count,snapshot_version,calendar_events,grading_categories,grading_policies,course_people,learning_units,institutions(id,canonical_name,city,region_code,country_code,default_time_zone),community_endorsements(count)",
       )
       .eq("id", publicationId)
       .eq("publication_status", "published")
@@ -233,6 +238,7 @@ export async function getCommunityPublication(
       ? publication.grading_policies
       : [],
     people: publicPeople(publication.course_people),
+    learningUnits: parsePublishedLearningUnits(publication.learning_units),
     institution: mapInstitution(institution),
     endorsementCount: endorsementCount(publication.community_endorsements),
     endorsedByViewer: Boolean(endorsement),

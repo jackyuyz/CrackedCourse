@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, GraduationCap, LayoutDashboard } from "lucide-react";
+import { BookOpenText, CalendarDays, GraduationCap, LayoutDashboard } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const tabs = [
   { suffix: "", label: "Overview", icon: LayoutDashboard },
   { suffix: "/calendar", label: "Calendar", icon: CalendarDays },
   { suffix: "/grades", label: "Grades", icon: GraduationCap },
+  { suffix: "/learning", label: "Learning units", icon: BookOpenText },
 ];
 
 export function CourseTabs({ courseId }: { courseId: string }) {
@@ -18,7 +19,9 @@ export function CourseTabs({ courseId }: { courseId: string }) {
     ? "calendar"
     : pathname.endsWith("/grades")
       ? "grades"
-      : "overview";
+      : pathname.endsWith("/learning")
+        ? "learning"
+        : "overview";
 
   return (
     <nav
@@ -27,7 +30,13 @@ export function CourseTabs({ courseId }: { courseId: string }) {
     >
       {tabs.map((tab, index) => {
         const key =
-          index === 0 ? "overview" : index === 1 ? "calendar" : "grades";
+          index === 0
+            ? "overview"
+            : index === 1
+              ? "calendar"
+              : index === 2
+                ? "grades"
+                : "learning";
         return (
           <Link
             key={tab.label}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   BookOpenCheck,
+  BookOpenText,
   Download,
   FileText,
   Mail,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { CommunityActions } from "@/components/community-actions";
+import { SafeMarkdown } from "@/components/safe-markdown";
 import { CalendarWorkspace } from "@/components/calendar-workspace";
 import {
   CommunityCourseTabs,
@@ -32,7 +34,9 @@ export const metadata: Metadata = { title: "Community course" };
 function communityTab(
   value: string | string[] | undefined,
 ): CommunityCourseTab {
-  return value === "calendar" || value === "grades" ? value : "overview";
+  return value === "calendar" || value === "grades" || value === "notes"
+    ? value
+    : "overview";
 }
 
 export default async function CommunityPublicationPage({
@@ -51,6 +55,10 @@ export default async function CommunityPublicationPage({
   const activeTab = communityTab(resolvedSearchParams.tab);
   const publication = await getCommunityPublication(viewer, publicationId);
   if (!publication) notFound();
+  const visibleTab =
+    activeTab === "notes" && publication.learningUnits.length === 0
+      ? "overview"
+      : activeTab;
 
   return (
     <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -96,11 +104,12 @@ export default async function CommunityPublicationPage({
       <div className="mt-7">
         <CommunityCourseTabs
           publicationId={publication.id}
-          activeTab={activeTab}
+          activeTab={visibleTab}
+          hasStudyNotes={publication.learningUnits.length > 0}
         />
       </div>
 
-      {activeTab === "overview" ? (
+      {visibleTab === "overview" ? (
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card className="gap-0 py-0">
             <CardHeader className="border-border border-b px-5 py-4">
@@ -179,7 +188,7 @@ export default async function CommunityPublicationPage({
         </div>
       ) : null}
 
-      {activeTab === "calendar" ? (
+      {visibleTab === "calendar" ? (
         <CalendarWorkspace
           {...buildCommunityCalendarData(publication)}
           courseId={publication.id}
@@ -188,12 +197,45 @@ export default async function CommunityPublicationPage({
         />
       ) : null}
 
-      {activeTab === "grades" ? (
+      {visibleTab === "grades" ? (
         <CommunityGradeCalculator
           publicationId={publication.id}
           categories={publication.categories}
           policies={publication.policies}
         />
+      ) : null}
+
+      {visibleTab === "notes" && publication.learningUnits.length > 0 ? (
+        <section className="mt-8 space-y-5">
+          <div>
+            <p className="text-ocean text-[10px] font-bold tracking-[0.13em] uppercase">
+              Community study notes
+            </p>
+            <h2 className="text-navy mt-2 text-xl font-extrabold tracking-[-0.03em]">
+              Shared learning units
+            </h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              These notes are read-only and reflect snapshot v{publication.version}.
+            </p>
+          </div>
+          {publication.learningUnits.map((unit) => (
+            <Card key={`${unit.displayOrder}-${unit.title}`} className="gap-0 py-0">
+              <CardHeader className="border-border border-b px-5 py-4">
+                <CardTitle className="flex items-center gap-2 text-base font-extrabold">
+                  <BookOpenText className="text-ocean size-4" /> {unit.title}
+                </CardTitle>
+                {unit.description ? (
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {unit.description}
+                  </p>
+                ) : null}
+              </CardHeader>
+              <CardContent className="p-5">
+                <SafeMarkdown markdown={unit.noteMarkdown} />
+              </CardContent>
+            </Card>
+          ))}
+        </section>
       ) : null}
     </main>
   );

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, GraduationCap, LayoutDashboard } from "lucide-react";
+import { BookOpenText, CalendarDays, GraduationCap, LayoutDashboard } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type CommunityCourseTab = "overview" | "calendar" | "grades";
+export type CommunityCourseTab = "overview" | "calendar" | "grades" | "notes";
 
 const tabs: Array<{
   key: CommunityCourseTab;
@@ -18,16 +18,21 @@ const tabs: Array<{
 export function CommunityCourseTabs({
   publicationId,
   activeTab,
+  hasStudyNotes = false,
 }: {
   publicationId: string;
   activeTab: CommunityCourseTab;
+  hasStudyNotes?: boolean;
 }) {
+  const visibleTabs = hasStudyNotes
+    ? [...tabs, { key: "notes" as const, label: "Study notes", icon: BookOpenText }]
+    : tabs;
   return (
     <nav
       className="border-border flex gap-1 overflow-x-auto border-b"
       aria-label="Shared course navigation"
     >
-      {tabs.map((tab) => {
+      {visibleTabs.map((tab) => {
         const href =
           tab.key === "overview"
             ? `/community/${publicationId}`
