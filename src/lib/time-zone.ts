@@ -13,9 +13,12 @@ export function getGreetingForTimeZone(
     .find((part) => part.type === "hour");
   const hour = Number(hourPart?.value);
 
+  if (hour < 5) return "Hello night owl";
+  if (hour < 8) return "Rise and shine";
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 22) return "Good evening";
+  return "Burning the midnight oil";
 }
 
 export function isValidTimeZone(value: string) {
