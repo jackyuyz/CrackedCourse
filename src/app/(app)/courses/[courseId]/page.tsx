@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CircleCheck,
   Clock3,
+  ExternalLink,
   FileText,
   GraduationCap,
   Mail,
@@ -219,6 +220,21 @@ export default async function CoursePage({ params }: PageProps) {
               <div className="bg-ocean/8 text-ocean mt-4 flex items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-semibold">
                 <CircleCheck className="size-3.5" /> {data.source.status}
               </div>
+              {viewer.isDemo ? (
+                <Button disabled variant="outline" className="mt-3 w-full">
+                  <ExternalLink className="size-4" /> Preview unavailable in demo
+                </Button>
+              ) : (
+                <Button asChild variant="outline" className="mt-3 w-full">
+                  <Link
+                    href={`/api/courses/${course.id}/pdf?sourceId=${data.source.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="size-4" /> Preview PDF
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : null}

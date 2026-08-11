@@ -29,6 +29,7 @@ export interface CourseOverviewData {
   gradingCategories: Array<{ name: string; weightPercent: number }>;
   policyWarnings: string[];
   source: {
+    id: string;
     originalName: string;
     importedAt: string;
     status: string;
@@ -162,6 +163,7 @@ export async function getCourseOverview(
         "The lowest written homework score is dropped. This rule is shown but not applied by the P0 calculator.",
       ],
       source: {
+        id: "demo-syllabus-source",
         originalName: "15-122-fall-2026-syllabus.pdf",
         importedAt: "Aug 28, 2026",
         status: "Reviewed and published",
@@ -174,7 +176,7 @@ export async function getCourseOverview(
   const { data: row } = await supabase
     .from("courses")
     .select(
-      "id,code,title,section,term_name,time_zone,color_key,status,institutions:institution_id(canonical_name),course_people(name,role,email,office_location,external_profile_url,is_hidden,office_hours(recurrence_text,is_hidden)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id,is_hidden),grading_categories(name,weight_percent,display_order,is_hidden),grading_policies(description,calculator_support,is_hidden),syllabus_sources(original_name,created_at,processing_status,page_count)",
+      "id,code,title,section,term_name,time_zone,color_key,status,institutions:institution_id(canonical_name),course_people(name,role,email,office_location,external_profile_url,is_hidden,office_hours(recurrence_text,is_hidden)),calendar_events(id,title,event_type,start_date,starts_at,is_all_day,location,source_item_id,is_hidden),grading_categories(name,weight_percent,display_order,is_hidden),grading_policies(description,calculator_support,is_hidden),syllabus_sources(id,original_name,created_at,processing_status,page_count)",
     )
     .eq("id", courseId)
     .eq("owner_id", viewer.id)
@@ -289,6 +291,7 @@ export async function getCourseOverview(
       .map((policy) => policy.description),
     source: source
       ? {
+          id: source.id,
           originalName: source.original_name,
           importedAt: new Intl.DateTimeFormat("en-US", {
             month: "short",

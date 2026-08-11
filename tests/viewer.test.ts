@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: mocks.createClient,
 }));
 
-import { getViewer } from "@/lib/auth/viewer";
+import { getViewer, getViewerState } from "@/lib/auth/viewer";
 
 describe("getViewer", () => {
   beforeEach(() => {
@@ -51,5 +51,14 @@ describe("getViewer", () => {
     expect(viewer?.displayName).toBe("Saved profile name");
     expect(mocks.from).toHaveBeenCalledWith("profiles");
     expect(mocks.eq).toHaveBeenCalledWith("id", "user-id");
+  });
+
+  it("keeps Auth rate limits distinct from a missing session", async () => {
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: null },
+      error: { status: 429, code: "over_request_rate_limit" },
+    });
+
+    await expect(getViewerState()).resolves.toEqual({ kind: "rate_limited" });
   });
 });

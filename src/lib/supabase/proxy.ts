@@ -1,6 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function isRateLimitedAuthError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { status?: unknown; code?: unknown };
+  return (
+    candidate.status === 429 || candidate.code === "over_request_rate_limit"
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -31,7 +39,12 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
+
+  if (isRateLimitedAuthError(error)) {
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  }
 
   if (!data?.claims) {
     const redirectUrl = request.nextUrl.clone();
