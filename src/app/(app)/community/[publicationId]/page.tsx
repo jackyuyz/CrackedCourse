@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  CalendarDays,
+  BookOpenCheck,
   Download,
   FileText,
   School,
@@ -12,42 +12,42 @@ import {
 } from "lucide-react";
 
 import { CommunityActions } from "@/components/community-actions";
+import { CalendarWorkspace } from "@/components/calendar-workspace";
+import {
+  CommunityCourseTabs,
+  type CommunityCourseTab,
+} from "@/components/community-course-tabs";
 import { CommunityGradeCalculator } from "@/components/community-grade-calculator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getViewer } from "@/lib/auth/viewer";
+import { buildCommunityCalendarData } from "@/lib/community-calendar";
 import { getCommunityPublication } from "@/lib/data/community";
 import { institutionLocation } from "@/lib/institutions";
 
 export const metadata: Metadata = { title: "Community course" };
 
-function eventDate(event: {
-  starts_at: string | null;
-  start_date: string | null;
-}) {
-  const value = event.starts_at ?? event.start_date;
-  if (!value) return "Date not specified";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    ...(event.starts_at
-      ? { hour: "numeric" as const, minute: "2-digit" as const }
-      : {}),
-  }).format(
-    new Date(event.start_date ? `${event.start_date}T12:00:00Z` : value),
-  );
+function communityTab(
+  value: string | string[] | undefined,
+): CommunityCourseTab {
+  return value === "calendar" || value === "grades" ? value : "overview";
 }
 
 export default async function CommunityPublicationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ publicationId: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 }) {
-  const viewer = await getViewer();
+  const [viewer, { publicationId }, resolvedSearchParams] = await Promise.all([
+    getViewer(),
+    params,
+    searchParams,
+  ]);
   if (!viewer) return null;
-  const { publicationId } = await params;
+  const activeTab = communityTab(resolvedSearchParams.tab);
   const publication = await getCommunityPublication(viewer, publicationId);
   if (!publication) notFound();
 
@@ -58,6 +58,9 @@ export default async function CommunityPublicationPage({
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-ocean/10 text-ocean border-0 font-mono shadow-none">
               {publication.courseCode}
+            </Badge>
+            <Badge className="bg-navy/8 text-navy border-0 shadow-none">
+              <BookOpenCheck className="size-3.5" /> Community copy
             </Badge>
             <Badge variant="outline" className="bg-white">
               <School className="size-3.5" /> {publication.institution.name}
@@ -78,6 +81,9 @@ export default async function CommunityPublicationPage({
             {institutionLocation(publication.institution)} · Shared by{" "}
             {publication.contributorName} · Snapshot v{publication.version}
           </p>
+          <p className="text-ocean mt-2 flex items-center gap-1.5 text-[10px] font-bold tracking-[0.08em] uppercase">
+            <ShieldCheck className="size-3.5" /> Read-only shared snapshot
+          </p>
         </div>
         <CommunityActions
           publicationId={publication.id}
@@ -86,49 +92,15 @@ export default async function CommunityPublicationPage({
         />
       </div>
 
-      <CommunityGradeCalculator
-        publicationId={publication.id}
-        categories={publication.categories}
-        policies={publication.policies}
-      />
+      <div className="mt-7">
+        <CommunityCourseTabs
+          publicationId={publication.id}
+          activeTab={activeTab}
+        />
+      </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-6">
-          <Card className="gap-0 py-0">
-            <CardHeader className="border-border border-b px-5 py-4">
-              <CardTitle className="flex items-center gap-2 text-sm font-extrabold">
-                <CalendarDays className="text-ocean size-4" /> Confirmed dates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {publication.events.length > 0 ? (
-                publication.events.map((event, index) => (
-                  <div
-                    key={`${event.title}-${event.starts_at ?? event.start_date}-${index}`}
-                    className="border-border flex items-start justify-between gap-4 border-b px-5 py-4 last:border-b-0"
-                  >
-                    <div>
-                      <p className="text-navy text-sm font-bold">
-                        {event.title}
-                      </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
-                        {eventDate(event)}
-                        {event.location ? ` · ${event.location}` : ""}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="bg-white text-[9px]">
-                      {event.event_type.replaceAll("_", " ")}
-                    </Badge>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground p-8 text-center text-sm">
-                  No confirmed dates were published.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
+      {activeTab === "overview" ? (
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card className="gap-0 py-0">
             <CardHeader className="border-border border-b px-5 py-4">
               <CardTitle className="flex items-center gap-2 text-sm font-extrabold">
@@ -155,41 +127,65 @@ export default async function CommunityPublicationPage({
               )}
             </CardContent>
           </Card>
-        </div>
 
-        <aside className="space-y-5">
-          <Card className="gap-0 py-0">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3">
-                <span className="bg-sky/25 text-ocean grid size-10 shrink-0 place-items-center rounded-xl">
-                  <FileText className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-navy truncate text-sm font-bold">
-                    {publication.sourceOriginalName}
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-[10px]">
-                    {publication.pageCount ?? "—"} pages · Original PDF
-                  </p>
-                </div>
-              </div>
-              <Button asChild variant="outline" className="mt-4 w-full">
-                <Link
-                  href={`/api/community/${publication.id}/pdf`}
-                  target="_blank"
-                >
-                  <Download className="size-4" /> Open PDF
-                </Link>
-              </Button>
-              <p className="text-muted-foreground mt-3 flex gap-2 text-[10px] leading-4">
-                <ShieldCheck className="text-ocean mt-0.5 size-3.5 shrink-0" />
-                Available only to signed-in community members through a
-                short-lived private link.
+          <aside className="space-y-5">
+            <div className="border-ocean/20 bg-ocean/6 text-navy flex gap-3 rounded-xl border p-4 text-xs leading-5">
+              <ShieldCheck className="text-ocean mt-0.5 size-4 shrink-0" />
+              <p>
+                This is a read-only community snapshot. Import it to create a
+                private workspace you can edit.
               </p>
-            </CardContent>
-          </Card>
-        </aside>
-      </div>
+            </div>
+            <Card className="gap-0 py-0">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <span className="bg-sky/25 text-ocean grid size-10 shrink-0 place-items-center rounded-xl">
+                    <FileText className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-navy truncate text-sm font-bold">
+                      {publication.sourceOriginalName}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-[10px]">
+                      {publication.pageCount ?? "—"} pages · Original PDF
+                    </p>
+                  </div>
+                </div>
+                <Button asChild variant="outline" className="mt-4 w-full">
+                  <Link
+                    href={`/api/community/${publication.id}/pdf`}
+                    target="_blank"
+                  >
+                    <Download className="size-4" /> Open PDF
+                  </Link>
+                </Button>
+                <p className="text-muted-foreground mt-3 flex gap-2 text-[10px] leading-4">
+                  <ShieldCheck className="text-ocean mt-0.5 size-3.5 shrink-0" />
+                  Available only to signed-in community members through a
+                  short-lived private link.
+                </p>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+      ) : null}
+
+      {activeTab === "calendar" ? (
+        <CalendarWorkspace
+          {...buildCommunityCalendarData(publication)}
+          courseId={publication.id}
+          demo={false}
+          allowExport={false}
+        />
+      ) : null}
+
+      {activeTab === "grades" ? (
+        <CommunityGradeCalculator
+          publicationId={publication.id}
+          categories={publication.categories}
+          policies={publication.policies}
+        />
+      ) : null}
     </main>
   );
 }

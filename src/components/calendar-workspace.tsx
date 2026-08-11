@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   addMonths,
+  addWeeks,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -13,9 +14,11 @@ import {
   startOfMonth,
   startOfWeek,
   subMonths,
+  subWeeks,
 } from "date-fns";
 import {
   CalendarDays,
+  CalendarRange,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -61,20 +64,41 @@ const eventTypeLabels: Record<AppEvent["type"], string> = {
   other: "Other",
 };
 
+function weekRangeLabel(start: Date, end: Date) {
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${format(start, "MMM d, yyyy")}–${format(end, "MMM d, yyyy")}`;
+  }
+  if (start.getMonth() !== end.getMonth()) {
+    return `${format(start, "MMM d")}–${format(end, "MMM d, yyyy")}`;
+  }
+  return `${format(start, "MMM d")}–${format(end, "d, yyyy")}`;
+}
+
+function timeSortValue(time: string | null | undefined) {
+  if (!time) return -1;
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+  const hour = Number(match[1]) % 12;
+  const minute = Number(match[2]);
+  return hour * 60 + minute + (match[3].toUpperCase() === "PM" ? 720 : 0);
+}
+
 export function CalendarWorkspace({
   courses,
   events,
   courseId,
   demo,
+  allowExport = true,
 }: {
   courses: AppCourse[];
   events: AppEvent[];
   courseId?: string;
   demo: boolean;
+  allowExport?: boolean;
 }) {
   const firstDate = events[0]?.date ? parseISO(events[0].date) : new Date();
-  const [month, setMonth] = useState(startOfMonth(firstDate));
-  const [view, setView] = useState<"month" | "agenda">("month");
+  const [cursor, setCursor] = useState(firstDate);
+  const [view, setView] = useState<"month" | "week" | "agenda">("month");
   const [selectedCourseIds, setSelectedCourseIds] = useState(
     () => new Set(courses.map((course) => course.id)),
   );
@@ -95,6 +119,10 @@ export function CalendarWorkspace({
       ),
     [events, selectedCourseIds, selectedTypes],
   );
+  const month = startOfMonth(cursor);
+  const weekStart = startOfWeek(cursor, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(cursor, { weekStartsOn: 0 });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 0 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 0 }),
@@ -102,6 +130,18 @@ export function CalendarWorkspace({
   const monthEvents = visible.filter((event) =>
     isSameMonth(parseISO(event.date), month),
   );
+
+  function moveCalendar(offset: -1 | 1) {
+    setCursor((current) =>
+      view === "week"
+        ? offset === -1
+          ? subWeeks(current, 1)
+          : addWeeks(current, 1)
+        : offset === -1
+          ? subMonths(current, 1)
+          : addMonths(current, 1),
+    );
+  }
 
   function toggleCourse(id: string) {
     setSelectedCourseIds((current) => {
@@ -234,62 +274,77 @@ export function CalendarWorkspace({
       </aside>
 
       <section className="min-w-0">
-        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
+        <div className="mb-3 flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => setMonth(subMonths(month, 1))}
-              aria-label="Previous month"
+              onClick={() => moveCalendar(-1)}
+              aria-label={view === "week" ? "Previous week" : "Previous month"}
             >
               <ChevronLeft className="size-4" />
             </Button>
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => setMonth(addMonths(month, 1))}
-              aria-label="Next month"
+              onClick={() => moveCalendar(1)}
+              aria-label={view === "week" ? "Next week" : "Next month"}
             >
               <ChevronRight className="size-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setMonth(startOfMonth(new Date()))}
+              onClick={() => setCursor(new Date())}
             >
               Today
             </Button>
             <h2 className="text-navy ml-1 text-lg font-extrabold tracking-[-0.03em]">
-              {format(month, "MMMM yyyy")}
+              {view === "week"
+                ? weekRangeLabel(weekStart, weekEnd)
+                : format(month, "MMMM yyyy")}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="border-border flex rounded-lg border bg-white p-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="border-border flex overflow-x-auto rounded-lg border bg-white p-0.5">
               <Button
                 variant={view === "month" ? "secondary" : "ghost"}
                 size="sm"
                 className="h-7"
                 onClick={() => setView("month")}
+                aria-pressed={view === "month"}
               >
                 <CalendarDays className="size-3.5" /> Month
+              </Button>
+              <Button
+                variant={view === "week" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7"
+                onClick={() => setView("week")}
+                aria-pressed={view === "week"}
+              >
+                <CalendarRange className="size-3.5" /> Week
               </Button>
               <Button
                 variant={view === "agenda" ? "secondary" : "ghost"}
                 size="sm"
                 className="h-7"
                 onClick={() => setView("agenda")}
+                aria-pressed={view === "agenda"}
               >
                 <List className="size-3.5" /> Agenda
               </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              onClick={exportCalendar}
-            >
-              <Download className="size-3.5" /> Export
-            </Button>
+            {allowExport ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={exportCalendar}
+              >
+                <Download className="size-3.5" /> Export
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -368,48 +423,111 @@ export function CalendarWorkspace({
           </Card>
         ) : null}
 
-        <div className={cn("space-y-3", view === "month" && "sm:hidden")}>
-          {monthEvents.length > 0 ? (
-            monthEvents
-              .sort((a, b) => a.date.localeCompare(b.date))
-              .map((event) => (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => setSelectedEvent(event)}
-                  className="border-border flex w-full items-center gap-4 rounded-xl border bg-white p-4 text-left shadow-[0_3px_14px_rgba(2,48,71,0.035)]"
-                >
-                  <span className="w-12 shrink-0 text-center">
-                    <span className="text-muted-foreground block text-[9px] font-bold tracking-[0.07em] uppercase">
-                      {format(parseISO(event.date), "EEE")}
-                    </span>
-                    <span className="text-navy mt-0.5 block font-mono text-xl font-extrabold">
-                      {format(parseISO(event.date), "d")}
-                    </span>
-                  </span>
-                  <span
+        {view === "week" ? (
+          <Card className="gap-0 overflow-x-auto py-0 shadow-[0_6px_24px_rgba(2,48,71,0.045)]">
+            <div className="grid min-w-[840px] grid-cols-7">
+              {weekDays.map((day, index) => {
+                const dayEvents = visible
+                  .filter((event) => isSameDay(parseISO(event.date), day))
+                  .toSorted(
+                    (a, b) => timeSortValue(a.time) - timeSortValue(b.time),
+                  );
+
+                return (
+                  <div
+                    key={day.toISOString()}
+                    aria-label={format(day, "EEEE, MMMM d, yyyy")}
                     className={cn(
-                      "h-9 w-1 shrink-0 rounded-full",
-                      colorClasses[event.courseColor].dot,
+                      "border-border min-h-[420px] p-2",
+                      index < 6 && "border-r",
                     )}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="text-navy block truncate text-sm font-extrabold">
-                      {event.title}
-                    </span>
-                    <span className="text-muted-foreground mt-1 block text-[11px]">
-                      {event.courseCode} · {event.time ?? "All day"}
-                    </span>
-                  </span>
-                  <ChevronRight className="text-muted-foreground size-4" />
-                </button>
-              ))
-          ) : (
-            <div className="border-border text-muted-foreground rounded-xl border border-dashed bg-white/60 p-10 text-center text-sm">
-              No visible events this month.
+                  >
+                    <div className="border-border mb-2 border-b pb-2 text-center">
+                      <p className="text-muted-foreground text-[9px] font-bold tracking-[0.08em] uppercase">
+                        {format(day, "EEE")}
+                      </p>
+                      <span
+                        className={cn(
+                          "mx-auto mt-1 grid size-8 place-items-center rounded-full font-mono text-sm font-extrabold",
+                          isSameDay(day, new Date())
+                            ? "bg-navy text-white"
+                            : "text-navy",
+                        )}
+                      >
+                        {format(day, "d")}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {dayEvents.map((event) => (
+                        <button
+                          key={event.id}
+                          type="button"
+                          onClick={() => setSelectedEvent(event)}
+                          className={cn(
+                            "block w-full rounded-lg border px-2 py-2 text-left text-[9px] font-bold",
+                            colorClasses[event.courseColor].chip,
+                          )}
+                        >
+                          {event.time ? (
+                            <span className="mb-0.5 block font-mono opacity-70">
+                              {event.time}
+                            </span>
+                          ) : null}
+                          <span className="line-clamp-2">{event.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </Card>
+        ) : null}
+
+        {view !== "week" ? (
+          <div className={cn("space-y-3", view === "month" && "sm:hidden")}>
+            {monthEvents.length > 0 ? (
+              monthEvents
+                .toSorted((a, b) => a.date.localeCompare(b.date))
+                .map((event) => (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => setSelectedEvent(event)}
+                    className="border-border flex w-full items-center gap-4 rounded-xl border bg-white p-4 text-left shadow-[0_3px_14px_rgba(2,48,71,0.035)]"
+                  >
+                    <span className="w-12 shrink-0 text-center">
+                      <span className="text-muted-foreground block text-[9px] font-bold tracking-[0.07em] uppercase">
+                        {format(parseISO(event.date), "EEE")}
+                      </span>
+                      <span className="text-navy mt-0.5 block font-mono text-xl font-extrabold">
+                        {format(parseISO(event.date), "d")}
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        "h-9 w-1 shrink-0 rounded-full",
+                        colorClasses[event.courseColor].dot,
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="text-navy block truncate text-sm font-extrabold">
+                        {event.title}
+                      </span>
+                      <span className="text-muted-foreground mt-1 block text-[11px]">
+                        {event.courseCode} · {event.time ?? "All day"}
+                      </span>
+                    </span>
+                    <ChevronRight className="text-muted-foreground size-4" />
+                  </button>
+                ))
+            ) : (
+              <div className="border-border text-muted-foreground rounded-xl border border-dashed bg-white/60 p-10 text-center text-sm">
+                No visible events this month.
+              </div>
+            )}
+          </div>
+        ) : null}
       </section>
 
       <Sheet

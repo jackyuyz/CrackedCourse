@@ -34,7 +34,9 @@ export interface CommunityPublicationDetail
     starts_at: string | null;
     start_date: string | null;
     is_all_day: boolean;
+    time_zone: string | null;
     location: string | null;
+    status: string | null;
   }>;
   categories: Array<{
     name: string;
