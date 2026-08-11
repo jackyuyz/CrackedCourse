@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, LayoutDashboard, LibraryBig } from "lucide-react";
@@ -12,10 +13,23 @@ const workspaceLinks = [
   { href: "/community", label: "Community", icon: LibraryBig },
 ] as const;
 
+function subscribeToPathname() {
+  return () => {};
+}
+
+function serverPathnameSnapshot() {
+  return null;
+}
+
 export function WorkspaceNavigation() {
   const pathname = usePathname();
+  const clientPathname = useSyncExternalStore(
+    subscribeToPathname,
+    () => pathname,
+    serverPathnameSnapshot,
+  );
 
-  return <WorkspaceNavigationLinks pathname={pathname} />;
+  return <WorkspaceNavigationLinks pathname={clientPathname} />;
 }
 
 export function WorkspaceNavigationFallback() {
