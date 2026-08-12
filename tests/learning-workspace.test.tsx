@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("LearningWorkspace", () => {
-  it("remounts file and link inputs when the material mode changes", () => {
+  it("prioritizes the note editor and remounts material inputs when the mode changes", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     render(
       <LearningWorkspace
@@ -39,6 +39,10 @@ describe("LearningWorkspace", () => {
       />,
     );
 
+    expect(screen.getByRole("textbox", { name: "" })).toHaveClass("min-h-[30rem]");
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Private materials/ }));
     fireEvent.click(screen.getByRole("button", { name: "Add material" }));
     expect(screen.getByLabelText("HTTPS link")).toHaveValue("");
 
