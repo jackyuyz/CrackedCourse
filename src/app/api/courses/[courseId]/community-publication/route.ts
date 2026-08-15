@@ -65,7 +65,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     session.supabase
       .from("learning_units")
       .select(
-        "title,description,display_order,learning_unit_notes!inner(body_markdown,updated_at)",
+        "title,description,display_order,learning_unit_notes(body_markdown,updated_at)",
       )
       .eq("course_id", courseId)
       .eq("owner_id", session.userId)
@@ -154,21 +154,19 @@ export async function POST(request: Request, { params }: RouteContext) {
     );
   }
   const term = deriveTerm(course.term_name, course.term_start);
-  const learningUnits = (publicUnitsResult.data ?? []).flatMap((unit) => {
+  const learningUnits = (publicUnitsResult.data ?? []).map((unit) => {
     const note = Array.isArray(unit.learning_unit_notes)
       ? unit.learning_unit_notes[0]
       : unit.learning_unit_notes;
     const noteMarkdown = note?.body_markdown?.trim();
-    if (!noteMarkdown || !note?.updated_at) return [];
-    return [
-      {
-        title: unit.title,
-        description: unit.description,
-        displayOrder: unit.display_order,
-        noteMarkdown,
-        noteUpdatedAt: note.updated_at,
-      },
-    ];
+    return {
+      title: unit.title,
+      description: unit.description,
+      displayOrder: unit.display_order,
+      ...(noteMarkdown && note?.updated_at
+        ? { noteMarkdown, noteUpdatedAt: note.updated_at }
+        : {}),
+    };
   });
   const snapshot = {
     source_course_id: course.id,

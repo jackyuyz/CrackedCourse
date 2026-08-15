@@ -87,6 +87,12 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
               },
             ],
           },
+          {
+            title: "Conditional probability",
+            description: "A later unit with no public note yet.",
+            display_order: 1,
+            learning_unit_notes: [],
+          },
         ],
         error: null,
       }),
@@ -167,7 +173,7 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
     expect(selection).not.toContain("assessments");
     expect(selection).not.toContain("student_score_percent");
     expect(mocks.learningUnitsSelect).toHaveBeenCalledWith(
-      "title,description,display_order,learning_unit_notes!inner(body_markdown,updated_at)",
+      "title,description,display_order,learning_unit_notes(body_markdown,updated_at)",
     );
     expect(mocks.publicationInsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -191,6 +197,11 @@ describe("POST /api/courses/[courseId]/community-publication", () => {
             displayOrder: 0,
             noteMarkdown: "Keep the sample space explicit.",
             noteUpdatedAt: "2026-08-10T00:00:00.000Z",
+          },
+          {
+            title: "Conditional probability",
+            description: "A later unit with no public note yet.",
+            displayOrder: 1,
           },
         ],
         publication_status: "published",

@@ -302,7 +302,7 @@ export function LearningWorkspace({
       <div className="min-w-0 space-y-6">
         {error ? <div role="alert" className="border-destructive/30 bg-destructive/5 text-destructive rounded-xl border px-4 py-3 text-sm">{error}</div> : null}
         {message ? <div className="border-ocean/20 bg-ocean/6 text-navy rounded-xl border px-4 py-3 text-sm">{message}</div> : null}
-        {initialData.publicationVersion ? <div className="border-ocean/20 bg-ocean/6 text-navy flex items-start gap-3 rounded-xl border p-4 text-xs leading-5"><Globe2 className="text-ocean mt-0.5 size-4 shrink-0" /><p>{hasUnpublishedPublicChanges ? <>You have unpublished learning updates. Use <strong>Update public snapshot</strong> in the course menu when they are ready to share.</> : <>Public course notes are included in Community only when you update the public snapshot. Current snapshot: v{initialData.publicationVersion}.</>}</p></div> : null}
+        {initialData.publicationVersion ? <div className="border-ocean/20 bg-ocean/6 text-navy flex items-start gap-3 rounded-xl border p-4 text-xs leading-5"><Globe2 className="text-ocean mt-0.5 size-4 shrink-0" /><p>{hasUnpublishedPublicChanges ? <>You have unpublished learning updates. Use <strong>Update public snapshot</strong> in the course menu when they are ready to share.</> : <>Visible learning-unit titles and descriptions, plus any Public notes, are included in Community when you update the public snapshot. Private notes and materials stay private. Current snapshot: v{initialData.publicationVersion}.</>}</p></div> : null}
 
         {selectedUnit ? <>
           <Card className="gap-0 py-0">
@@ -317,7 +317,7 @@ export function LearningWorkspace({
               </div>
             </CardHeader>
             <CardContent className="p-5">
-              <p className="text-muted-foreground mb-3 text-xs leading-5">{visibility === "public" ? "Saved locally until you update the Community snapshot. Private notes and materials are never published." : "Visible only in your private workspace. It will never be included in Community."}</p>
+              <p className="text-muted-foreground mb-3 text-xs leading-5">{visibility === "public" ? "Learning-unit titles and descriptions are shared with Community after you update the snapshot. This note is included only when it is Public. Private notes and materials are never published." : "Visible only in your private workspace. It will never be included in Community."}</p>
               <Textarea value={noteBody} onChange={(event) => setNoteBody(event.target.value)} onBlur={() => void saveNote(selectedUnit.id, visibility, noteBody)} disabled={demo} placeholder={visibility === "public" ? "Write an explanation, summary, or study guidance for this unit…" : "Write personal reminders, questions, or scratch notes…"} className="min-h-[30rem] font-mono text-sm leading-6 md:min-h-[34rem]" maxLength={120000} />
               <div className="text-muted-foreground mt-3 flex items-center justify-between text-xs"><span>{noteBody.length.toLocaleString()} / 120,000</span><span>{demo ? "Demo notes are read only" : noteStatus === "saving" ? "Saving…" : noteStatus === "saved" ? "Saved" : noteStatus === "error" ? "Couldn’t save — retry on blur" : ""}</span></div>
             </CardContent>

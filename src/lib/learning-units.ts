@@ -80,8 +80,14 @@ export const publishedLearningUnitSchema = z.object({
   title: z.string().trim().min(1).max(180),
   description: z.string().max(1_000).nullable(),
   displayOrder: z.number().int().nonnegative(),
-  noteMarkdown: z.string().trim().min(1).max(120_000),
-  noteUpdatedAt: z.string().datetime(),
+  noteMarkdown: z.string().trim().min(1).max(120_000).optional(),
+  noteUpdatedAt: z.string().datetime({ offset: true }).optional(),
+}).superRefine((unit, context) => {
+  if (Boolean(unit.noteMarkdown) === Boolean(unit.noteUpdatedAt)) return;
+  context.addIssue({
+    code: "custom",
+    message: "Published notes must include both their content and update time.",
+  });
 });
 
 export type PublishedLearningUnit = z.infer<typeof publishedLearningUnitSchema>;

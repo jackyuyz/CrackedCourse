@@ -36,19 +36,19 @@ describe("CommunityCourseTabs", () => {
     );
   });
 
-  it("shows study notes only when the published snapshot has them", () => {
+  it("shows learning units when the published snapshot has them", () => {
     const { rerender } = render(
       <CommunityCourseTabs
         publicationId="publication-id"
-        activeTab="notes"
-        hasStudyNotes
+        activeTab="learning"
+        hasLearningUnits
       />,
     );
-    expect(screen.getByRole("link", { name: "Study notes" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Learning units" })).toHaveAttribute(
       "href",
-      "/community/publication-id?tab=notes",
+      "/community/publication-id?tab=learning",
     );
-    expect(screen.getByRole("link", { name: "Study notes" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Learning units" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -57,9 +57,9 @@ describe("CommunityCourseTabs", () => {
       <CommunityCourseTabs
         publicationId="publication-id"
         activeTab="overview"
-        hasStudyNotes={false}
+        hasLearningUnits={false}
       />,
     );
-    expect(screen.queryByRole("link", { name: "Study notes" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Learning units" })).toBeNull();
   });
 });

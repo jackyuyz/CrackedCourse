@@ -3,7 +3,7 @@ import { BookOpenText, CalendarDays, GraduationCap, LayoutDashboard } from "luci
 
 import { cn } from "@/lib/utils";
 
-export type CommunityCourseTab = "overview" | "calendar" | "grades" | "notes";
+export type CommunityCourseTab = "overview" | "calendar" | "grades" | "learning";
 
 const tabs: Array<{
   key: CommunityCourseTab;
@@ -18,14 +18,14 @@ const tabs: Array<{
 export function CommunityCourseTabs({
   publicationId,
   activeTab,
-  hasStudyNotes = false,
+  hasLearningUnits = false,
 }: {
   publicationId: string;
   activeTab: CommunityCourseTab;
-  hasStudyNotes?: boolean;
+  hasLearningUnits?: boolean;
 }) {
-  const visibleTabs = hasStudyNotes
-    ? [...tabs, { key: "notes" as const, label: "Study notes", icon: BookOpenText }]
+  const visibleTabs = hasLearningUnits
+    ? [...tabs, { key: "learning" as const, label: "Learning units", icon: BookOpenText }]
     : tabs;
   return (
     <nav
