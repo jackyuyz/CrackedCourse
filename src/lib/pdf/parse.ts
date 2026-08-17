@@ -24,6 +24,7 @@ async function loadPdfJs() {
     runtimeGlobals.DOMMatrix ??= canvas.DOMMatrix;
     runtimeGlobals.Path2D ??= canvas.Path2D;
 
+    await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
     return await import("pdfjs-dist/legacy/build/pdf.mjs");
   } catch (cause) {
     throw new Error("PDF_RUNTIME_UNAVAILABLE", { cause });
