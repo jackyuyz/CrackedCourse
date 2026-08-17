@@ -13,15 +13,32 @@ export interface ParsedPdf {
   usefulCharacterCount: number;
 }
 
+async function loadPdfJs() {
+  try {
+    const canvas = await import("@napi-rs/canvas");
+    const runtimeGlobals = globalThis as unknown as {
+      DOMMatrix?: typeof canvas.DOMMatrix;
+      Path2D?: typeof canvas.Path2D;
+    };
+
+    runtimeGlobals.DOMMatrix ??= canvas.DOMMatrix;
+    runtimeGlobals.Path2D ??= canvas.Path2D;
+
+    return await import("pdfjs-dist/legacy/build/pdf.mjs");
+  } catch (cause) {
+    throw new Error("PDF_RUNTIME_UNAVAILABLE", { cause });
+  }
+}
+
 export async function parsePdf(buffer: ArrayBuffer): Promise<ParsedPdf> {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await loadPdfJs();
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(buffer),
     useSystemFonts: true,
   });
-  const document = await loadingTask.promise;
 
   try {
+    const document = await loadingTask.promise;
     const pages: ParsedPdfPage[] = [];
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);

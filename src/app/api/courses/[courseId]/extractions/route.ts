@@ -294,6 +294,11 @@ export async function POST(_request: Request, { params }: RouteContext) {
         code: "PDF_DOWNLOAD_FAILED",
         message: "We couldn’t retrieve the saved PDF. Try again.",
       },
+      PDF_RUNTIME_UNAVAILABLE: {
+        code: "PDF_RUNTIME_UNAVAILABLE",
+        message:
+          "PDF processing is temporarily unavailable. Your upload is saved—try again later.",
+      },
       SOURCE_PAGES_SAVE_FAILED: {
         code: "SOURCE_PAGES_SAVE_FAILED",
         message: "We read the PDF but couldn’t save its pages. Try again.",
