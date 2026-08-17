@@ -221,6 +221,33 @@ describe("heuristic syllabus extraction", () => {
       ),
     ).toEqual([]);
   });
+
+  it("infers a missing start meridiem without reversing an exam range", async () => {
+    const pages = [
+      {
+        pageNumber: 1,
+        text: "ANTH23: Debating Multiculturalism\nFall 2025",
+      },
+      {
+        pageNumber: 13,
+        text: "Final Exam: Wednesday 12/10, 11:30-2:30 pm in Mosaic 113",
+      },
+    ];
+
+    const result = await new HeuristicSyllabusExtractor().extract({
+      sourceId: "shared-meridiem-syllabus",
+      pages,
+      assumedTerm: { timeZone: "America/New_York" },
+    });
+
+    expect(result.events[0]?.value).toMatchObject({
+      startDate: "2025-12-10",
+      startTime: "11:30",
+      endDate: "2025-12-10",
+      endTime: "14:30",
+      isAllDay: false,
+    });
+  });
 });
 
 describe("extraction validation", () => {

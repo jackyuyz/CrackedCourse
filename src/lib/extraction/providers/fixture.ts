@@ -264,6 +264,12 @@ function parseClock(
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
+function oppositeMeridiem(meridiem: string) {
+  return meridiem.replace(/\./g, "").toLocaleLowerCase("en-US") === "pm"
+    ? "am"
+    : "pm";
+}
+
 function parseTime(text: string): ParsedTime | null {
   const token = "(\\d{1,2})(?::(\\d{2}))?\\s*(a\\.?m\\.?|p\\.?m\\.?)?";
   const range = new RegExp(`${token}\\s*(?:[-–—]|to)\\s*${token}`, "i").exec(
@@ -272,8 +278,39 @@ function parseTime(text: string): ParsedTime | null {
   if (range) {
     const startMeridiem = range[3] ?? range[6];
     const endMeridiem = range[6] ?? range[3];
-    const startTime = parseClock(range[1], range[2], startMeridiem);
-    const endTime = parseClock(range[4], range[5], endMeridiem);
+    let startTime = parseClock(range[1], range[2], startMeridiem);
+    let endTime = parseClock(range[4], range[5], endMeridiem);
+
+    if (!range[3] && range[6] && endTime) {
+      const alternativeStart = parseClock(
+        range[1],
+        range[2],
+        oppositeMeridiem(range[6]),
+      );
+      if (
+        alternativeStart &&
+        alternativeStart <= endTime &&
+        (!startTime || startTime > endTime)
+      ) {
+        startTime = alternativeStart;
+      }
+    }
+
+    if (range[3] && !range[6] && startTime) {
+      const alternativeEnd = parseClock(
+        range[4],
+        range[5],
+        oppositeMeridiem(range[3]),
+      );
+      if (
+        alternativeEnd &&
+        alternativeEnd >= startTime &&
+        (!endTime || endTime < startTime)
+      ) {
+        endTime = alternativeEnd;
+      }
+    }
+
     if (startTime && endTime) {
       return {
         startTime,
