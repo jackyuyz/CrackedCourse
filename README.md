@@ -47,7 +47,7 @@ Enable the Supabase Email provider, then configure the Auth site URL and redirec
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe publishable key                |
 | `NEXT_PUBLIC_APP_URL`                  | Canonical app origin for auth and calendars |
 | `NEXT_PUBLIC_DEMO_MODE`                | Optional explicit demo-mode switch          |
-| `OPENAI_API_KEY`                       | Server-only Learning Assistant API key       |
+| `OPENAI_API_KEY`                       | Server-only Learning Assistant API key      |
 
 The Learning Assistant model and generation settings are fixed in server code; no model-selection environment variable is required.
 
@@ -67,7 +67,7 @@ CI runs the same checks and production build on pushes and pull requests.
 - Re-uploading the same PDF reuses its saved course and source. Drafts are reprocessed only when a newer extraction version is available; published courses open directly without duplicating data.
 - Extracted facts are always staged as review items with page-aware evidence. Confirmed data becomes canonical only through a database transaction.
 - All user-owned tables and storage objects are protected with ownership-based RLS. Route handlers repeat the same authorization checks.
-- The private Learning Assistant analyzes only owner-selected unit notes and text-based PDFs, validates every returned citation against supplied chunks, and never writes to notes or Community without a separate user action.
+- The private Learning Assistant creates and caches a source-grounded Study Guide from the active unit's eligible notes and PDFs, reuses it until sources change, validates every returned citation, and never writes to notes or Community without a separate user action.
 - The extraction provider boundary is deliberately vendor-neutral. The default evidence-first heuristic provider handles visually ordered PDF text, common syllabus tables, course staff and office hours, term-inferred dates, point- or percentage-based grading structures, and unsupported policy notes. Every inferred value remains reviewable before publishing.
 
 The explicit spec interpretation for direct uploads is documented in [docs/SPEC-AMENDMENTS.md](./docs/SPEC-AMENDMENTS.md).

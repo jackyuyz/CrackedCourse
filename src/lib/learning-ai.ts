@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const LEARNING_ASSISTANT_MODEL = "gpt-5.5";
-export const LEARNING_ASSISTANT_PROMPT_VERSION = "learning-assistant-v1";
+export const LEARNING_ASSISTANT_PROMPT_VERSION = "learning-assistant-v2";
 
 export const learningAssistantActionSchema = z.enum([
   "question",
@@ -39,6 +39,7 @@ export const learningAssistantRequestSchema = z
         difficulty: z.enum(["introductory", "standard", "challenge"]),
       })
       .optional(),
+    intent: z.literal("unit-guide").optional(),
   })
   .superRefine((value, context) => {
     if (
@@ -56,6 +57,16 @@ export const learningAssistantRequestSchema = z
         code: "custom",
         path: ["practice"],
         message: "Practice options are required.",
+      });
+    }
+    if (
+      value.intent === "unit-guide" &&
+      (value.action !== "summary" || value.question)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["intent"],
+        message: "A unit guide must be a summary without a custom question.",
       });
     }
     const sourceKeys = value.sources.map((source) =>

@@ -45,6 +45,14 @@ function actionInstruction(request: LearningAssistantRequest) {
     return `Explain this concept in plain language: ${request.question}`;
   }
   if (request.action === "summary") {
+    if (request.intent === "unit-guide") {
+      return [
+        "Create a concise, practical study guide for this learning unit.",
+        "Use these Markdown sections in this order: ## What this unit is about, ## Key ideas, ## Watch out for, and ## Try next.",
+        "Under Key ideas, use three to six short numbered items. Under Watch out for, identify likely misconceptions only when supported by the sources. Under Try next, suggest two concrete study actions.",
+        "Do not mention these formatting instructions in the answer.",
+      ].join(" ");
+    }
     return "Summarize the core ideas, terminology, and source-based cautions in this learning unit.";
   }
   return `Create ${request.practice?.count ?? 5} ${request.practice?.difficulty ?? "standard"} practice questions. Put questions and hidden answer content in practiceItems; do not put the answers in answerMarkdown.`;

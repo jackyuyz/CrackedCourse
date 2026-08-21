@@ -1,4 +1,53 @@
-# Design QA
+# Design QA — AI Study Guide collapse placement
+
+## Scope
+
+- Keep the existing AI Study Guide visual system and behavior.
+- Move the collapse/expand control from a wrapped row to the card header’s top-right corner.
+
+## Visual truth and captures
+
+- Source visual truth: `/var/folders/gg/m56sp7p91czcgcqrkcgbd5800000gn/T/TemporaryItems/NSIRD_screencaptureui_MZeW1Q/截屏2026-08-20 23.54.44.png` (938 × 230 px).
+- Implementation screenshot: `/private/tmp/crackedcourse-ai-study-guide-button-right.png` (911 × 320 px).
+- Side-by-side comparison: `/private/tmp/crackedcourse-ai-study-guide-comparison.png` (1896 × 364 px).
+- Browser CSS viewport: 2560 × 1238 at device-pixel ratio 1.
+- Density normalization: both sources were 1× captures. The implementation crop was scaled from 911 px to 938 px wide only for the side-by-side comparison; its native screenshot was inspected separately.
+- State: authenticated course Learning units page, AI Study Guide expanded, saved guide stale, two sources, Update control visible.
+
+## Full-view and focused comparison
+
+- Full-view evidence: the implementation keeps the same card, guide content, typography, badges, borders, colors, spacing tokens, and expanded state as the source screen.
+- Focused evidence: the card header was compared directly because button placement was the only requested change. The revised control sits 20 px from the card’s right edge and 16 px from its top edge, aligned with the title row. No additional focused region was needed.
+
+## Findings and comparison history
+
+### Pass 1 — blocked
+
+- [P1] The collapse control wrapped beneath the title and metadata, expanding the header and weakening the control’s relationship to the card.
+- Cause: `CardHeader` defaults to CSS Grid; `flex-row` set direction but did not change the display mode.
+- Fix: add the existing Tailwind `flex` utility to the AI Study Guide header while preserving its current alignment and responsive sizing.
+
+### Pass 2 — passed
+
+- Post-fix evidence shows the collapse control in the upper-right corner, with the stale-state Update control immediately to its left.
+- Expanded and collapsed interactions both passed; collapse hides the guide body, expansion restores it, and the control remains at the same upper-right coordinates.
+- Browser console errors: none.
+- No actionable P0, P1, or P2 issues remain.
+
+## Required fidelity surfaces
+
+- Fonts and typography: unchanged; the existing Geist hierarchy, weight, size, line height, and wrapping are preserved.
+- Spacing and layout rhythm: corrected; header content now occupies one aligned row, with 20 px horizontal and 16 px vertical card insets.
+- Colors and visual tokens: unchanged; existing background, border, badge, button, and semantic stale-state tokens are retained.
+- Image quality and asset fidelity: no raster assets were added or replaced; the existing Lucide chevron remains crisp at its intended size.
+- Copy and content: unchanged.
+- Accessibility: the existing descriptive label, `aria-expanded`, and `aria-controls` behavior remains intact in both states.
+
+final result: passed
+
+---
+
+# Archived Design QA — Signup school selector
 
 ## Scope
 

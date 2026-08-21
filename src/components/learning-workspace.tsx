@@ -328,6 +328,16 @@ export function LearningWorkspace({
         {initialData.publicationVersion ? <div className="border-ocean/20 bg-ocean/6 text-navy flex items-start gap-3 rounded-xl border p-4 text-xs leading-5"><Globe2 className="text-ocean mt-0.5 size-4 shrink-0" /><p>{hasUnpublishedPublicChanges ? <>You have unpublished learning updates. Use <strong>Update public snapshot</strong> in the course menu when they are ready to share.</> : <>Visible learning-unit titles and descriptions, plus any Public notes, are included in Community when you update the public snapshot. Private notes and materials stay private. Current snapshot: v{initialData.publicationVersion}.</>}</p></div> : null}
 
         {selectedUnit ? <>
+          <LearningAssistant
+            key={selectedUnit.id}
+            courseId={initialData.courseId}
+            unit={selectedUnit}
+            materials={materials}
+            demo={demo}
+            enabled={aiEnabled}
+            onCopyToNote={copyAiOutputToNote}
+          />
+
           <Card className="gap-0 py-0">
             <CardHeader className="border-border flex flex-col gap-3 border-b px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
@@ -345,16 +355,6 @@ export function LearningWorkspace({
               <div className="text-muted-foreground mt-3 flex items-center justify-between text-xs"><span>{noteBody.length.toLocaleString()} / 120,000</span><span>{demo ? "Demo notes are read only" : noteStatus === "saving" ? "Saving…" : noteStatus === "saved" ? "Saved" : noteStatus === "error" ? "Couldn’t save — retry on blur" : ""}</span></div>
             </CardContent>
           </Card>
-
-          <LearningAssistant
-            key={selectedUnit.id}
-            courseId={initialData.courseId}
-            unit={selectedUnit}
-            materials={materials}
-            demo={demo}
-            enabled={aiEnabled}
-            onCopyToNote={copyAiOutputToNote}
-          />
 
           <div className="grid gap-3 lg:grid-cols-2">
             <Card className="gap-0 py-0 shadow-none">

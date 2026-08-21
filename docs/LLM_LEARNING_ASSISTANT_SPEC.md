@@ -1,7 +1,7 @@
 # LLM Learning Assistant Specification
 
-- **Status:** Implementation-ready feature specification
-- **Version:** 1.1
+- **Status:** Stage 1 implemented; later stages remain specified
+- **Version:** 1.2
 - **Last updated:** 2026-08-20
 - **Product:** CrackedCourse
 - **Feature area:** Grounded learning assistance and syllabus extraction enhancement
@@ -23,7 +23,7 @@ The assistant is a private learning aid. It does not silently edit notes, change
 ### 1.2 Core principles
 
 1. **Grounded before fluent.** The assistant must use retrieved source passages, not present unsupported claims as material-based facts.
-2. **Student-controlled.** The owner chooses the unit, sources, and request. They explicitly choose whether to copy an output into a note.
+2. **Student-controlled.** The assistant may create one private cached guide from a unit's eligible default sources, but the owner controls refreshes, follow-up source selection, and whether any output is copied into a note.
 3. **Private by default.** Private notes, materials, prompts, and generated outputs stay in the owner workspace and never enter a Community snapshot.
 4. **Transparent about limits.** The UI distinguishes a cited answer from a general explanation, identifies unavailable/unsupported sources, and says when the materials do not answer the question.
 5. **Learning-oriented.** The assistant explains, asks, and practices; it does not claim to replace the instructor, course policy, or an assessment's authorized rules.
@@ -31,6 +31,8 @@ The assistant is a private learning aid. It does not silently edit notes, change
 ### 1.3 Initial implementation slice
 
 The first vertical slice may prepare and retrieve selected source chunks in memory for each request and persist citations as verified JSON on `learning_unit_ai_outputs`. The normalized source-version/chunk/citation tables in section 8 remain the target when extraction caching, output history at scale, or embedding retrieval is introduced. This staging choice must not weaken owner authorization, citation verification, private-by-default behavior, or Community exclusion.
+
+Stage 1 also provides a unit-level **AI Study Guide**. On first open, the client checks for a saved guide and generates one only when the unit has eligible content and no prior guide exists. The server fingerprints the selected note contents and up to three ordered PDF records, persists the result, and reuses it on later opens. Changed sources preserve the previous guide as stale until the owner explicitly refreshes it. Opening a unit or autosaving a note must not repeatedly invoke the model.
 
 ---
 
@@ -47,13 +49,14 @@ For an active course and selected learning unit, the course owner can:
 5. Open a cited PDF at the cited page when applicable.
 6. Explicitly copy a generated response, or a selected excerpt, into either note. The default target is the private note.
 7. Reopen prior generated outputs for the same learning unit while they are retained.
+8. See a saved AI Study Guide without configuring a request, and explicitly update it when its source fingerprint becomes stale.
 
 ### 2.2 P1 non-goals
 
 - Automatic edits to public or private notes.
 - Automatic creation, renaming, reordering, or hiding of learning units.
 - Automatic study plans, reminders, calendar events, grade predictions, or assessment submissions.
-- Chat over every course source by default; each request is deliberately scoped to one unit and selected sources.
+- Chat over every course source. The automatic guide is scoped to the active unit's non-empty notes and at most three ordered text PDFs; follow-up questions remain explicitly source-scoped.
 - Analysis of external material links, webpages, Canvas pages, Google Drive content, or authenticated third-party URLs.
 - Analysis of uploaded `.ppt`/`.pptx` files. They remain downloadable materials until slide-text extraction is separately implemented.
 - OCR as a guaranteed feature. A scanned or text-poor PDF is unavailable to the assistant in P1.
@@ -83,14 +86,14 @@ Course (owned by one user)
     └── Unit titles/descriptions + owner-authored public notes only
 ```
 
-| Content | Owner workspace | Sent to model provider | Community snapshot | Default |
-| --- | --- | --- | --- | --- |
-| Selected PDF text | Yes | Only for the active request's retrieved passages | Never | Private |
-| Selected public/private note text | Yes | Only for the active request's retrieved passages | Never as AI context/output | Private |
-| Prompt and generated output | Yes | Prompt and grounded context only | Never | Private |
-| Citation locator and short quote | Yes | May be generated/validated | Never | Private |
-| Copied private-note content | Yes | No additional sharing | Never | Private |
-| Copied public-note content | Yes | No automatic sharing; requires existing explicit publish action | Only after explicit publish | Local |
+| Content                           | Owner workspace | Sent to model provider                                          | Community snapshot          | Default |
+| --------------------------------- | --------------- | --------------------------------------------------------------- | --------------------------- | ------- |
+| Selected PDF text                 | Yes             | Only for the active request's retrieved passages                | Never                       | Private |
+| Selected public/private note text | Yes             | Only for the active request's retrieved passages                | Never as AI context/output  | Private |
+| Prompt and generated output       | Yes             | Prompt and grounded context only                                | Never                       | Private |
+| Citation locator and short quote  | Yes             | May be generated/validated                                      | Never                       | Private |
+| Copied private-note content       | Yes             | No additional sharing                                           | Never                       | Private |
+| Copied public-note content        | Yes             | No automatic sharing; requires existing explicit publish action | Only after explicit publish | Local   |
 
 An AI output is not an authored course note. It is not publishable data, even if it was generated from a public course note. The user must actively copy it into a note before it can become authored workspace content; the existing Community confirmation still applies before any public note is shared.
 
@@ -98,11 +101,19 @@ An AI output is not an authored course note. It is not publishable data, even if
 
 ## 4. Primary user journeys
 
+### 4.0 Open a unit with a cached AI Study Guide
+
+1. Owner opens a learning unit. The UI immediately checks for a current private guide.
+2. If a matching guide exists for the current prompt version and source fingerprint, the saved result appears without a model request.
+3. If eligible sources exist but no guide has ever been generated, the UI creates one automatically and saves it.
+4. If the notes or eligible PDFs changed, the previous guide remains visible with a **Materials updated** state. Regeneration requires the owner to select **Update guide**.
+5. The source selector is secondary. Follow-up questions default to the guide sources but the owner may adjust them.
+
 ### 4.1 Ask a grounded question
 
 1. Owner opens **Learning units** and selects a unit.
-2. Owner opens the **Ask AI** panel and sees the unit's eligible sources, all initially unselected.
-3. Owner selects one or more PDFs and/or the public or private note, then asks a question.
+2. Owner sees the saved **AI Study Guide** and an **Ask about this unit** input.
+3. Eligible guide sources are initially selected for the follow-up. The owner may open the secondary source settings before asking a question.
 4. The UI states that selected content will be sent to the configured AI provider only to answer this request.
 5. The server retrieves relevant passages only from the selected sources and asks the provider for a structured, cited response.
 6. The assistant presents its answer and citations. A citation opens the relevant material page or scrolls to the note location.
@@ -158,12 +169,12 @@ The empty state says:
 
 Provide four mutually clear starting actions:
 
-| Action | Prompt behavior | Expected result |
-| --- | --- | --- |
-| Ask a question | Owner writes a question | Concise cited answer or an honest insufficiency statement |
-| Explain simply | Owner may name a concept | Plain-language explanation with cited support |
-| Summarize unit | No free-form prompt required | Core ideas, terminology, and source-based cautions |
-| Practice me | Owner selects count/difficulty | Questions first, per-question answer reveal |
+| Action         | Prompt behavior                | Expected result                                           |
+| -------------- | ------------------------------ | --------------------------------------------------------- |
+| Ask a question | Owner writes a question        | Concise cited answer or an honest insufficiency statement |
+| Explain simply | Owner may name a concept       | Plain-language explanation with cited support             |
+| Summarize unit | No free-form prompt required   | Core ideas, terminology, and source-based cautions        |
+| Practice me    | Owner selects count/difficulty | Questions first, per-question answer reveal               |
 
 The user can write in the course's language. The assistant replies in the language of the request unless the user asks otherwise.
 
@@ -213,7 +224,10 @@ export interface StudyAssistantProvider {
 type StudyAssistantInput = {
   action: "question" | "explain" | "summary" | "practice";
   question: string | null;
-  practice?: { count: 3 | 5 | 10; difficulty: "introductory" | "standard" | "challenge" };
+  practice?: {
+    count: 3 | 5 | 10;
+    difficulty: "introductory" | "standard" | "challenge";
+  };
   locale: string;
   sources: Array<{
     chunkId: string;
@@ -265,11 +279,11 @@ It may give a clearly labeled general-learning explanation only if the user expl
 
 ### 7.1 Eligible P1 sources
 
-| Source | Eligibility | Preparation | Citation locator |
-| --- | --- | --- | --- |
-| Unit public note | Current, non-empty note | Markdown normalized into paragraphs | Paragraph and offsets |
-| Unit private note | Current, non-empty note | Markdown normalized into paragraphs | Paragraph and offsets |
-| Unit PDF material | Active text-based PDF file | Extract text page-by-page using existing PDF parser | PDF page and offsets |
+| Source            | Eligibility                | Preparation                                         | Citation locator      |
+| ----------------- | -------------------------- | --------------------------------------------------- | --------------------- |
+| Unit public note  | Current, non-empty note    | Markdown normalized into paragraphs                 | Paragraph and offsets |
+| Unit private note | Current, non-empty note    | Markdown normalized into paragraphs                 | Paragraph and offsets |
+| Unit PDF material | Active text-based PDF file | Extract text page-by-page using existing PDF parser | PDF page and offsets  |
 
 Only the owner may initiate preparation or read prepared source text. Prepared text is private processing data, not a Community asset.
 
@@ -364,10 +378,11 @@ status                     learning_ai_output_status not null
 prompt                     text nullable
 request_options            jsonb not null default '{}'
 answer_markdown            text nullable
-insufficiency_message      text nullable
+insufficiency              text nullable
 provider                   text not null
 model                      text not null
 prompt_version             text not null
+source_fingerprint         text nullable
 source_version_ids         uuid[] not null
 error_code                 text nullable
 error_message              text nullable
@@ -376,6 +391,8 @@ completed_at               timestamptz nullable
 ```
 
 Prompt and output length limits are enforced server-side. `answer_markdown` is an immutable generation result once `succeeded`; creating a revised result creates a new row. This table is never selected by Community loaders or publication code.
+
+The Stage 1 implementation stores a 64-character SHA-256 `source_fingerprint` only for cached unit guides. A unique owner/unit/action/fingerprint/prompt-version index prevents duplicate cache rows. Interactive outputs keep this field null and may retain normal history.
 
 ### 8.5 `learning_unit_ai_citations`
 
@@ -417,14 +434,16 @@ This audit is private and informational. It does not make copied text immutable,
 
 Implement authenticated, validated route handlers or equivalent server actions:
 
-| Method and route | Purpose |
-| --- | --- |
-| `POST /api/courses/:courseId/learning-units/:unitId/ai-sources/:sourceId/prepare` | Prepare a selected PDF or note source version for private retrieval |
-| `GET /api/courses/:courseId/learning-units/:unitId/ai-sources` | List eligible sources and readiness; never return full source text |
-| `POST /api/courses/:courseId/learning-units/:unitId/ai-outputs` | Validate request, retrieve chunks, generate, validate, and persist output |
-| `GET /api/courses/:courseId/learning-units/:unitId/ai-outputs` | List owner-visible output summaries for the unit |
-| `GET /api/courses/:courseId/learning-units/:unitId/ai-outputs/:outputId` | Return one output with validated citations |
-| `POST /api/courses/:courseId/learning-units/:unitId/ai-outputs/:outputId/copy` | Return explicit insertion payload or record an already-confirmed copy event |
+| Method and route                                                                  | Purpose                                                                                                   |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `GET /api/courses/:courseId/learning-units/:unitId/ai`                            | Return the current, stale, generating, failed, missing, or empty unit-guide state and its default sources |
+| `POST /api/courses/:courseId/learning-units/:unitId/ai`                           | Generate/reuse a cached unit guide or complete an interactive grounded request                            |
+| `POST /api/courses/:courseId/learning-units/:unitId/ai-sources/:sourceId/prepare` | Prepare a selected PDF or note source version for private retrieval                                       |
+| `GET /api/courses/:courseId/learning-units/:unitId/ai-sources`                    | List eligible sources and readiness; never return full source text                                        |
+| `POST /api/courses/:courseId/learning-units/:unitId/ai-outputs`                   | Validate request, retrieve chunks, generate, validate, and persist output                                 |
+| `GET /api/courses/:courseId/learning-units/:unitId/ai-outputs`                    | List owner-visible output summaries for the unit                                                          |
+| `GET /api/courses/:courseId/learning-units/:unitId/ai-outputs/:outputId`          | Return one output with validated citations                                                                |
+| `POST /api/courses/:courseId/learning-units/:unitId/ai-outputs/:outputId/copy`    | Return explicit insertion payload or record an already-confirmed copy event                               |
 
 All mutable responses use `Cache-Control: private, no-store`. Requests validate UUIDs, action values, source ownership, source/unit matching, source count, prompt size, and practice options on the server. Do not trust browser-provided extracted text, page numbers, chunks, source labels, model names, or owner IDs.
 
@@ -481,7 +500,7 @@ All mutable responses use `Cache-Control: private, no-store`. Requests validate 
 
 ### Source scope and privacy
 
-- **LLM-001:** The owner must actively select at least one ready source before generating an output.
+- **LLM-001:** Interactive output requires at least one eligible source. The first unit guide may automatically use the active unit's non-empty notes and up to three ordered text PDFs.
 - **LLM-002:** A selected source must belong to the owner, course, and selected unit; cross-course, hidden, or another user's source is rejected server-side.
 - **LLM-003:** A Community response, publication payload, or Community page never contains AI output, citation, prompt, source chunk, private note text, material path, or provider metadata.
 - **LLM-004:** The browser never receives an AI provider credential or arbitrary private source text.
@@ -506,6 +525,8 @@ All mutable responses use `Cache-Control: private, no-store`. Requests validate 
 - **LLM-014:** A scanned/text-poor PDF is marked unavailable and does not trigger a low-quality model request.
 - **LLM-015:** An invalid provider schema result, citation mismatch, rate limit, or timeout produces a recoverable structured error and does not expose provider internals.
 - **LLM-016:** Repeated submission with the same idempotency key does not create duplicate successful outputs.
+- **LLM-017:** Opening a unit with a current source fingerprint returns its saved guide without invoking the model.
+- **LLM-018:** A changed source marks the previous guide stale and does not automatically regenerate it.
 
 ---
 

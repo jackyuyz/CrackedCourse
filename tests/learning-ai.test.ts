@@ -8,6 +8,10 @@ import {
   selectRelevantChunks,
   validateAndBuildCitations,
 } from "@/lib/learning-ai";
+import {
+  defaultLearningGuideSources,
+  learningGuideSourceFingerprint,
+} from "@/lib/learning-guide-cache";
 import { generateLearningAssistantOutput } from "@/lib/openai/learning-assistant";
 
 afterEach(() => {
@@ -31,6 +35,25 @@ describe("Learning Assistant grounding", () => {
           { kind: "note", visibility: "private" },
           { kind: "note", visibility: "private" },
         ],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts only a source-based summary as the cached unit guide", () => {
+    expect(
+      learningAssistantRequestSchema.safeParse({
+        action: "summary",
+        question: null,
+        intent: "unit-guide",
+        sources: [{ kind: "note", visibility: "private" }],
+      }).success,
+    ).toBe(true);
+    expect(
+      learningAssistantRequestSchema.safeParse({
+        action: "question",
+        question: "What is this?",
+        intent: "unit-guide",
+        sources: [{ kind: "note", visibility: "private" }],
       }).success,
     ).toBe(false);
   });
@@ -103,6 +126,71 @@ describe("Learning Assistant grounding", () => {
       noteParagraph: 1,
     });
     expect(citations[0].quote).toContain("repeated subproblems");
+  });
+});
+
+describe("Learning Assistant guide cache", () => {
+  const notes = [
+    {
+      id: "note-private",
+      visibility: "private" as const,
+      body_markdown: "A confidence interval estimates an unknown parameter.",
+      updated_at: "2026-08-20T20:00:00.000Z",
+    },
+  ];
+  const materials = [
+    {
+      id: "22222222-2222-4222-8222-222222222222",
+      title: "Lecture 2",
+      storage_path: "user/lecture-2.pdf",
+      material_type: "pdf" as const,
+      kind: "file" as const,
+      size_bytes: 200,
+      updated_at: "2026-08-20T20:00:00.000Z",
+      display_order: 2,
+    },
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      title: "Lecture 1",
+      storage_path: "user/lecture-1.pdf",
+      material_type: "pdf" as const,
+      kind: "file" as const,
+      size_bytes: 100,
+      updated_at: "2026-08-20T19:00:00.000Z",
+      display_order: 1,
+    },
+  ];
+
+  it("selects notes and ordered PDFs without requiring user setup", () => {
+    expect(defaultLearningGuideSources(notes, materials)).toEqual([
+      { kind: "note", visibility: "private" },
+      {
+        kind: "material",
+        materialId: "11111111-1111-4111-8111-111111111111",
+      },
+      {
+        kind: "material",
+        materialId: "22222222-2222-4222-8222-222222222222",
+      },
+    ]);
+  });
+
+  it("keeps the fingerprint stable across row order and changes it with content", () => {
+    const first = learningGuideSourceFingerprint({ notes, materials });
+    const reordered = learningGuideSourceFingerprint({
+      notes: [...notes].reverse(),
+      materials: [...materials].reverse(),
+    });
+    const edited = learningGuideSourceFingerprint({
+      notes: [
+        { ...notes[0], body_markdown: `${notes[0].body_markdown} Edited.` },
+      ],
+      materials,
+    });
+
+    expect(first).toMatch(/^[a-f0-9]{64}$/);
+    expect(reordered).toBe(first);
+    expect(edited).not.toBe(first);
   });
 });
 
