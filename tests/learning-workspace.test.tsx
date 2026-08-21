@@ -13,7 +13,9 @@ afterEach(() => {
 
 describe("LearningWorkspace", () => {
   it("prioritizes the note editor and remounts material inputs when the mode changes", () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     render(
       <LearningWorkspace
         demo={false}
@@ -39,7 +41,9 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "" })).toHaveClass("min-h-[30rem]");
+    expect(
+      screen.getByRole("textbox", { name: "Markdown note editor" }),
+    ).toHaveClass("min-h-[30rem]");
     expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Private materials/ }));
