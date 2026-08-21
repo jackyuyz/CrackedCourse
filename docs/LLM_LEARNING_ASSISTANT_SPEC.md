@@ -1,7 +1,7 @@
 # LLM Learning Assistant Specification
 
 - **Status:** Implementation-ready feature specification
-- **Version:** 1.0
+- **Version:** 1.1
 - **Last updated:** 2026-08-20
 - **Product:** CrackedCourse
 - **Feature area:** Grounded learning assistance and syllabus extraction enhancement
@@ -27,6 +27,10 @@ The assistant is a private learning aid. It does not silently edit notes, change
 3. **Private by default.** Private notes, materials, prompts, and generated outputs stay in the owner workspace and never enter a Community snapshot.
 4. **Transparent about limits.** The UI distinguishes a cited answer from a general explanation, identifies unavailable/unsupported sources, and says when the materials do not answer the question.
 5. **Learning-oriented.** The assistant explains, asks, and practices; it does not claim to replace the instructor, course policy, or an assessment's authorized rules.
+
+### 1.3 Initial implementation slice
+
+The first vertical slice may prepare and retrieve selected source chunks in memory for each request and persist citations as verified JSON on `learning_unit_ai_outputs`. The normalized source-version/chunk/citation tables in section 8 remain the target when extraction caching, output history at scale, or embedding retrieval is introduced. This staging choice must not weaken owner authorization, citation verification, private-by-default behavior, or Community exclusion.
 
 ---
 

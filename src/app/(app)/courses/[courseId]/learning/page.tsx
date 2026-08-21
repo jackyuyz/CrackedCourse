@@ -17,5 +17,11 @@ export default async function LearningUnitsPage({
   const { courseId } = await params;
   const data = await getLearningWorkspace(viewer, courseId);
   if (!data) notFound();
-  return <LearningWorkspace initialData={data} demo={viewer.isDemo} />;
+  return (
+    <LearningWorkspace
+      initialData={data}
+      demo={viewer.isDemo}
+      aiEnabled={Boolean(process.env.OPENAI_API_KEY?.trim())}
+    />
+  );
 }

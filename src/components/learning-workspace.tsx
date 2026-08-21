@@ -18,6 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 
+import { LearningAssistant } from "@/components/learning-assistant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,9 +77,11 @@ function updateUnitNote(
 export function LearningWorkspace({
   initialData,
   demo,
+  aiEnabled = false,
 }: {
   initialData: LearningWorkspaceData;
   demo: boolean;
+  aiEnabled?: boolean;
 }) {
   const router = useRouter();
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +142,7 @@ export function LearningWorkspace({
 
   const saveNote = useCallback(
     async (unitId: string, noteVisibility: LearningUnitNoteVisibility, bodyMarkdown: string) => {
-      if (demo) return;
+      if (demo) return false;
       setNoteStatus("saving");
       try {
         const response = await fetch(`/api/courses/${initialData.courseId}/learning-units/${unitId}/notes`, {
@@ -154,13 +157,33 @@ export function LearningWorkspace({
         const note = payload.note;
         setUnits((current) => updateUnitNote(current, unitId, note.visibility, note.body_markdown, note.id, note.updated_at));
         setNoteStatus("saved");
+        return true;
       } catch (caught) {
         setNoteStatus("error");
         setError(caught instanceof Error ? caught.message : "We couldn’t save that note.");
+        return false;
       }
     },
     [demo, initialData.courseId],
   );
+
+  async function copyAiOutputToNote(
+    targetVisibility: LearningUnitNoteVisibility,
+    markdown: string,
+  ) {
+    if (!selectedUnit || demo) return false;
+    const currentBody = selectedUnit.notes[targetVisibility]?.bodyMarkdown ?? "";
+    const nextBody = [
+      currentBody.trimEnd(),
+      "## AI draft — review before sharing",
+      markdown.trim(),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    const saved = await saveNote(selectedUnit.id, targetVisibility, nextBody);
+    if (saved && visibility === targetVisibility) setNoteBody(nextBody);
+    return saved;
+  }
 
   useEffect(() => {
     if (!selectedUnit || demo || noteBody === (selectedNote?.bodyMarkdown ?? "")) return;
@@ -322,6 +345,16 @@ export function LearningWorkspace({
               <div className="text-muted-foreground mt-3 flex items-center justify-between text-xs"><span>{noteBody.length.toLocaleString()} / 120,000</span><span>{demo ? "Demo notes are read only" : noteStatus === "saving" ? "Saving…" : noteStatus === "saved" ? "Saved" : noteStatus === "error" ? "Couldn’t save — retry on blur" : ""}</span></div>
             </CardContent>
           </Card>
+
+          <LearningAssistant
+            key={selectedUnit.id}
+            courseId={initialData.courseId}
+            unit={selectedUnit}
+            materials={materials}
+            demo={demo}
+            enabled={aiEnabled}
+            onCopyToNote={copyAiOutputToNote}
+          />
 
           <div className="grid gap-3 lg:grid-cols-2">
             <Card className="gap-0 py-0 shadow-none">
